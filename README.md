@@ -1,5 +1,5 @@
 # 🏪 Store App
-A full-featured online store backend built with Java(v24.0.1") & Spring Boot — focused on security, scalability, and clean architecture.
+A full-featured online store backend built with Java(v 24.0.1") & Spring Boot — focused on security, scalability, and clean architecture.
 
 ---
 
