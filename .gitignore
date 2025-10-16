@@ -1,0 +1,75 @@
+HELP.md
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+
+########################################
+# 🚫 IntelliJ IDEA & build files
+########################################
+.idea/
+*.iws
+*.iml/
+*.ipr
+out/
+target/
+*.iml
+
+########################################
+# 🚫 Logs & temporary files
+########################################
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+
+########################################
+# 🚫 Environment and system files
+########################################
+.env
+*.class
+*.jar
+*.war
+*.ear
+
+########################################
+# 🚫 Spring Boot config (private data)
+########################################
+application.properties
+
+########################################
+# 🚫 OS specific files
+########################################
+Thumbs.db
+.DS_Store
+
+########################################
+# 🚫 Backup / build tools cache
+########################################
+/.mvn/
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+
+########################################
+# 🚫 Other development tools
+########################################
+.vscode/
