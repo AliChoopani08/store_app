@@ -1,7 +1,7 @@
 package com.Ali.Store.App.user.controller;
 
 
-import com.Ali.Store.App.security.jwt.JwtServiceInterface;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.service.user.authentication.AuthenticationServiceInterface;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -19,8 +19,8 @@ public class ConfigTest {
     }
 
     @Bean
-    public JwtServiceInterface mockJwtService() {
-        return mock(JwtServiceInterface.class);
+    public JwtAuthServiceInterface mockJwtService() {
+        return mock(JwtAuthServiceInterface.class);
     }
 
     @Bean

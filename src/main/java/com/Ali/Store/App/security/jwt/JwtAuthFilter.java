@@ -23,7 +23,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
-    private final JwtServiceInterface jwtService;
+    private final JwtAuthServiceInterface jwtService;
     private final UserDetailsService userDetailsService;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         }
         catch (ExpiredJwtException ex) {
-            handlerJwtAuthenticationException(request, response, new JwtAuthenticationException("This token expired !", ex));
+            handlerJwtAuthenticationException(request, response, new JwtAuthenticationException("This access token expired !", ex));
 
         }
         catch (MalformedJwtException ex) {

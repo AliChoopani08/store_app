@@ -6,7 +6,7 @@ import com.Ali.Store.App.dto.user.response.ProfileResponse;
 import com.Ali.Store.App.dto.user.response.UserResponse;
 import com.Ali.Store.App.controller.user.AuthenticationController;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
-import com.Ali.Store.App.security.jwt.JwtResponse;
+import com.Ali.Store.App.dto.security.AuthJwtResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationServiceInterface;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +39,7 @@ public class ControllerUsersShould { // load controller and jwt filters
     @Autowired
     private ObjectMapper objectMapper;
 
-    private JwtResponse jwtResponse;
+    private AuthJwtResponse jwtResponse;
     private String fakeRefreshToken;
     private String deviceId;
 
@@ -52,7 +52,7 @@ public class ControllerUsersShould { // load controller and jwt filters
         final ProfileResponse profileUserDetails = new ProfileResponse(12L, "Ali choopani", "09213467845", null);
         UserResponse userInformationDetails = new UserResponse(12L, "09213467845", ROLE_USER.name(), profileUserDetails);
 
-        jwtResponse = new JwtResponse(fakeAccessToken, fakeRefreshToken, userInformationDetails);
+        jwtResponse = new AuthJwtResponse(fakeAccessToken, fakeRefreshToken, userInformationDetails);
     }
 
     @Test

@@ -94,7 +94,7 @@ public class ServiceProductImplShould {
                 .thenReturn(ofNullable(product));
         mockSaveProduct(updatedProduct);
         mockMapperToProductResponse(response);
-        final ProductResponse updatedProductPrice = serviceProduct.updateProductPrice(priceDeltaRequest, 2L);
+        final ProductResponse updatedProductPrice = serviceProduct.resetProductPrice(priceDeltaRequest, 2L);
 
         assertThat(updatedProductPrice)
                 .extracting(ProductResponse::name, ProductResponse::price, p -> p.categoryResponse().name())

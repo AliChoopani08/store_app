@@ -1,10 +1,12 @@
 package com.Ali.Store.App.security.refreshToken;
 
 import com.Ali.Store.App.repository.userAndProfileUser.RepositoryRefreshToken;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import static java.time.LocalDateTime.now;
+
+import java.time.Instant;
 
 /**
  * Delete all expired saved refresh tokens in database every day at 3 o'clock in the midnight
@@ -14,8 +16,9 @@ import static java.time.LocalDateTime.now;
 public class RefreshTokenCleanUpJob {
     private final RepositoryRefreshToken repositoryRefreshToken;
 
-    @Scheduled(cron = "0 0 3 * * ?")
+    @Scheduled(fixedRate = 180000)// every 3 minute
+    @Transactional
     public void expiredRefreshTokenCleanUp() {
-        repositoryRefreshToken.deleteAllExpiredRefreshTokens(now());
+        repositoryRefreshToken.deleteAllExpiredRefreshTokens(Instant.now());
     }
 }

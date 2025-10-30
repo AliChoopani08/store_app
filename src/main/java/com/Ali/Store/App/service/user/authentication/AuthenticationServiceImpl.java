@@ -1,9 +1,8 @@
 package com.Ali.Store.App.service.user.authentication;
 
+import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.*;
-import com.Ali.Store.App.dto.user.request.CreateAdminRequest;
-import com.Ali.Store.App.dto.user.request.RefreshTokenRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.ProfileResponse;
 import com.Ali.Store.App.dto.user.response.UserResponse;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
@@ -16,13 +15,15 @@ import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import com.Ali.Store.App.repository.userAndProfileUser.RepositoryRefreshToken;
 import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
 import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticationToken;
-import com.Ali.Store.App.security.jwt.JwtResponse;
-import com.Ali.Store.App.security.jwt.JwtServiceInterface;
+import com.Ali.Store.App.dto.security.AuthJwtResponse;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
+import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
 import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,15 +37,17 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
     private final RepositoryUser repository;
     private final UserMapper userMapper;
     private final AuthenticationManager authenticationManager;
-    private final JwtServiceInterface jwtService;
+    private final JwtAuthServiceInterface jwtAuthService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenServiceInterface refreshTokenService;
     private final RepositoryRefreshToken repositoryRefreshToken;
+    private final PasswordEncoder encoder;
+    private final JwtPwdVerifyServiceInterface jwtPwdVerifyService;
 
 
     @Override
     @Transactional
-    public JwtResponse saveUser(UserRequest userRequest, String deviceInfo) {
+    public AuthJwtResponse saveUser(UserRequest userRequest, String deviceInfo) {
         final Users user = userMapper.userRequestToUser(userRequest);
         user.setRole(ROLE_USER);
 
@@ -53,7 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
 
     @Override
     @Transactional
-    public JwtResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo) {
+    public AuthJwtResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo) {
         final Users user = userMapper.createAdminRequestToUsers(createAdminRequest);
         user.setRole(Role.valueOf(createAdminRequest.getRole()));
 
@@ -61,7 +64,7 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
     }
 
     @Override
-    public JwtResponse login(UserRequest userRequest, String deviceInfo) {
+    public AuthJwtResponse login(UserRequest userRequest, String deviceInfo) {
         final Authentication authenticate = authenticationManager
                 .authenticate(new CustomAuthenticationToken(userRequest.getUsername(), userRequest.getPassword(), userRequest.getDeviceId()));
 
@@ -69,33 +72,74 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
         final Users user = userMapper.userDetailsImplToUsers(userDetails);
 
         final RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, userRequest.getDeviceId(), deviceInfo);
-        final String accessToken = jwtService.generateToken(user.getUsername());
+        final String accessToken = jwtAuthService.generateAccessToken(user.getUsername());
         final UserResponse userResponse = getUserResponse(user);
-        return new JwtResponse(refreshToken.getToken(), accessToken, userResponse);
+        return new AuthJwtResponse(refreshToken.getToken(), accessToken, userResponse);
     }
 
 
     @Override
+    @Transactional
     public void logout(Long userId) {
         refreshTokenService.deleteByUser(getCurrentUserById(userId));
     }
 
+    @Override
+    @Transactional
+    public UserResponse changeUsername(Long userId, ChangeUsernameRequest changeUsernameRequest) {
+        final Users currentUser = getCurrentUserById(userId);
+
+        currentUser.setUsername(changeUsernameRequest.getNewUsername());
+        final Users savedUser = repository.save(currentUser);
+
+        return getUserResponse(savedUser);
+    }
 
     @Override
-    public JwtResponse createNewAccessToken(RefreshTokenRequest refreshTokenRequest) {
-        if (!refreshTokenService.expiredRefreshToken(refreshTokenRequest)) {
-            final RefreshToken foundRefreshToken = refreshTokenService.getByTokenAndDeviceId(refreshTokenRequest);
-            final String createdAccessToken = jwtService.generateToken(foundRefreshToken.getUser().getUsername());
+    public PwdVerifyJwtResponse passwordVerify(Long userId, PasswordVerifyRequest passwordVerifyRequest) {
+        final Users user = getCurrentUserById(userId);
+
+        if (!encoder.matches(passwordVerifyRequest.currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Password is invalid !");
+        }
+        final String createdToken = jwtPwdVerifyService.generatePwdVerificationToken(user.getUsername());
+
+        return new PwdVerifyJwtResponse(createdToken, getUserResponse(user));
+    }
+
+    @Override
+    @Transactional
+    public UserResponse passwordReset(PasswordResetRequest passwordResetRequest) {
+            final String username = jwtPwdVerifyService.extractUsername(passwordResetRequest.getPasswordRestToken());
+            final Users foundUser = repository.findByUsername(username)
+                    .orElseThrow(() -> new NotFoundUser("This user with this username is not exist in database !"));
+
+            final String encodedPassword = passwordEncoder.encode(passwordResetRequest.newPassword);
+            foundUser.setPassword(encodedPassword);
+
+            final Users savedUser = repository.save(foundUser);
+
+            return getUserResponse(savedUser);
+    }
+
+
+    @Override
+    @Transactional
+    public AuthJwtResponse createNewAccessToken(RefreshTokenRequest rtRequest) {
+        if (!refreshTokenService.expiredRefreshToken(rtRequest.getToken(), rtRequest.getDeviceId())) {
+            final RefreshToken foundRefreshToken = refreshTokenService.getByTokenAndDeviceId(rtRequest.getToken(), rtRequest.getDeviceId());
+            final String createdAccessToken = jwtAuthService.generateAccessToken(foundRefreshToken.getUser().getUsername());
             final UserResponse userResponse = getUserResponse(foundRefreshToken.getUser());
-            return new JwtResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse);
+            return new AuthJwtResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse);
         }
         else {
-            refreshTokenService.deleteExpiredUser(refreshTokenRequest);
+            refreshTokenService.deleteExpiredUser(rtRequest);
             throw new ExpiredRefreshToken("This refresh token is expired !");
         }
     }
 
-    private <T extends CommonFieldsForSavePeople> JwtResponse helperForCommonCodesOfSavePerson(T registerRequest, Users user, String deviceInfo) {
+    @Transactional
+    private <T extends CommonFieldsForSavePeople> AuthJwtResponse helperForCommonCodesOfSavePerson(T registerRequest, Users user, String deviceInfo) {
         ProfileUser profile = new ProfileUser();
         final String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
 
@@ -113,9 +157,9 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
         final UserResponse userResponse = getUserResponse(savedUser);
 
         final RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser, registerRequest.getDeviceId(), deviceInfo);
-        String accessToken = jwtService.generateToken(savedUser.getUsername());
+        String accessToken = jwtAuthService.generateAccessToken(savedUser.getUsername());
 
-        return new JwtResponse(refreshToken.getToken(), accessToken, userResponse);
+        return new AuthJwtResponse(refreshToken.getToken(), accessToken, userResponse);
     }
 
     private Users getCurrentUserById(Long userId) {

@@ -6,9 +6,9 @@ import com.Ali.Store.App.entities.userAndProfileUser.Users;
 
 public interface RefreshTokenServiceInterface {
 
-    RefreshToken getByTokenAndDeviceId(RefreshTokenRequest tokenRequest);
+    RefreshToken getByTokenAndDeviceId(String token, String deviceId);
     RefreshToken createRefreshToken(Users user, String deviceId, String deviceInfo);
-    boolean expiredRefreshToken(RefreshTokenRequest tokenRequest);
+    boolean expiredRefreshToken(String token, String deviceId);
     void deleteByUser(Users user);
     void deleteExpiredUser(RefreshTokenRequest tokenRequest);
 }

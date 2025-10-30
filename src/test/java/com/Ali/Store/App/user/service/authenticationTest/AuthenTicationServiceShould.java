@@ -1,14 +1,20 @@
 package com.Ali.Store.App.user.service.authenticationTest;
 
+import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.*;
+import com.Ali.Store.App.dto.user.request.ChangeUsernameRequest;
+import com.Ali.Store.App.dto.user.request.PasswordResetRequest;
+import com.Ali.Store.App.dto.user.request.PasswordVerifyRequest;
 import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.response.UserResponse;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
 import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
 import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticationToken;
-import com.Ali.Store.App.security.jwt.JwtResponse;
-import com.Ali.Store.App.security.jwt.JwtServiceInterface;
+import com.Ali.Store.App.dto.security.AuthJwtResponse;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
+import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
 import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationServiceImpl;
@@ -22,13 +28,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_USER;
 import static java.time.Duration.ofDays;
 import static java.time.Instant.now;
+import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -43,17 +49,19 @@ public class AuthenTicationServiceShould {
     @Mock
     private AuthenticationManager authenticationManager;
     @Mock
-    private JwtServiceInterface jwtService;
+    private JwtAuthServiceInterface jwtAuthService;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private RefreshTokenServiceInterface refreshTokenService;
+    @Mock
+    private JwtPwdVerifyServiceInterface pwdVerifyService;
     @InjectMocks
     AuthenticationServiceImpl service;
 
     private UserRequest userRequest;
     private Users user;
-    private JwtResponse fakeToken;
+    private AuthJwtResponse fakeToken;
     private RefreshToken refreshToken;
 
     @BeforeEach
@@ -62,7 +70,7 @@ public class AuthenTicationServiceShould {
         user = new Users("09214893654", "Alifghd@54t");
         user.setId(12L);
         user.setRole(ROLE_USER);
-        fakeToken = new JwtResponse("hagdgfghhgyueegysgfsGDGYUAGGGGFGG545736.fake");
+        fakeToken = new AuthJwtResponse("hagdgfghhgyueegysgfsGDGYUAGGGGFGG545736.fake");
         refreshToken = new RefreshToken(3L,"HSGYGUgygdggdh-yyr5t536()ksh","Windows-11-User-1234","Windows-11-User",now().plus(ofDays(20)));
     }
 
@@ -81,9 +89,9 @@ public class AuthenTicationServiceShould {
                 .thenReturn(user);
         when(refreshTokenService.createRefreshToken(any(Users.class), any(String.class), any(String.class)))
                 .thenReturn(refreshToken);
-        when(jwtService.generateToken(user.getUsername()))
+        when(jwtAuthService.generateAccessToken(user.getUsername()))
                 .thenReturn(fakeToken.getAccessToken());
-        final JwtResponse savedUser = service.saveUser(userRequest, deviceInfo);
+        final AuthJwtResponse savedUser = service.saveUser(userRequest, deviceInfo);
 
         assertThat(savedUser)
                 .isEqualTo(fakeToken);
@@ -100,12 +108,72 @@ public class AuthenTicationServiceShould {
                 .thenReturn(fakeAuth);
         when(userMapper.userDetailsImplToUsers(any(UserDetailsImpl.class)))
                 .thenReturn(user);
-        when(jwtService.generateToken(user.getUsername()))
+        when(jwtAuthService.generateAccessToken(user.getUsername()))
                 .thenReturn(fakeToken.getAccessToken());
         when(refreshTokenService.createRefreshToken(any(Users.class), any(String.class), any(String.class)))
                 .thenReturn(refreshToken);
-        final JwtResponse loggedIn = service.login(userRequest, deviceInfo);
+        final AuthJwtResponse loggedIn = service.login(userRequest, deviceInfo);
 
         assertThat(loggedIn).isEqualTo(fakeToken);
+    }
+
+    @Test
+    void change_username() {
+        final ChangeUsernameRequest usernameRequest = new ChangeUsernameRequest("ali.23.choupani@gmail.com");
+        Users updatedUser = new Users("ali.23.choupani@gmail.com", "Alifghd@54t");
+        updatedUser.setId(12L);
+        updatedUser.setRole(ROLE_USER);
+
+        when(repository.findById(any(Long.class)))
+                .thenReturn(ofNullable(user));
+        when(repository.save(any(Users.class)))
+                .thenReturn(updatedUser);
+
+        final UserResponse changeUsernameResponse = service.changeUsername(12L, usernameRequest);
+
+        assertThat(changeUsernameResponse)
+                .extracting(UserResponse::username, UserResponse::id)
+                .containsExactly("ali.23.choupani@gmail.com", 12L);
+    }
+
+    @Test
+    void password_verify_and_generate_pwd_verify_token() {
+        final PasswordVerifyRequest request = new PasswordVerifyRequest("Alifghd@54t");
+        String fakePwdVerifyToken = "gdhgsterteuhHSG4df34@fsrdferdhetd53";
+
+        when(repository.findById(any(Long.class)))
+                .thenReturn(ofNullable(user));
+        when(passwordEncoder.matches(any(String.class), any(String.class)))
+                .thenReturn(true);
+        when(pwdVerifyService.generatePwdVerificationToken(any(String.class)))
+                .thenReturn(fakePwdVerifyToken);
+
+        final PwdVerifyJwtResponse result = service.passwordVerify(12L, request);
+
+        assertThat(result)
+                .extracting(PwdVerifyJwtResponse::getPasswordVerifyToken, p -> p.getUserResponse().username())
+                .containsExactly("gdhgsterteuhHSG4df34@fsrdferdhetd53","09214893654");
+    }
+
+    @Test
+    void password_reset() {
+        final PasswordResetRequest passwordReset = new PasswordResetRequest("gdhgsterteuhHSG4df34@fsrdferdhetd53","Ali132345@h");
+        String exceptedPasswordEncoded = "ksksjdFSGS4erdfxgxhdjsn635";
+        final Users exceptedUser = new Users("09214893654", "Ali132345@h");
+        exceptedUser.setRole(ROLE_USER);
+
+        when(pwdVerifyService.extractUsername(any(String.class)))
+                .thenReturn("09214893654");
+        when(repository.findByUsername(any(String.class)))
+                .thenReturn(ofNullable(user));
+        when(passwordEncoder.encode(any(String.class)))
+                .thenReturn(exceptedPasswordEncoded);
+        when(repository.save(any(Users.class)))
+                .thenReturn(exceptedUser);
+
+        service.passwordReset(passwordReset);
+
+        assertThat(user.getPassword())
+                .isEqualTo(exceptedPasswordEncoded);
     }
 }

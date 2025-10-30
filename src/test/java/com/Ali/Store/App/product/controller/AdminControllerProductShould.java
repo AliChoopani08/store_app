@@ -102,7 +102,7 @@ public class AdminControllerProductShould {
         final PriceDeltaRequest priceDeltaRequest = new PriceDeltaRequest(5000);
         ProductResponse expectedProductResponse = new ProductResponse(3L, "Mint Yogurt", 5000, 5,"1-mint-yogurt",new CategoryResponse(2L, "Food"));
 
-        given(serviceProduct.updateProductPrice(any(PriceDeltaRequest.class), any(Long.class)))
+        given(serviceProduct.resetProductPrice(any(PriceDeltaRequest.class), any(Long.class)))
                 .willReturn(expectedProductResponse);
 
         mockMvc.perform(patch("/admin/product/price/3")

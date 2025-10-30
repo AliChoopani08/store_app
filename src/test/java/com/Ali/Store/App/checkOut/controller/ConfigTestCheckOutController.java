@@ -1,6 +1,6 @@
 package com.Ali.Store.App.checkOut.controller;
 
-import com.Ali.Store.App.security.jwt.JwtServiceInterface;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.service.checkOut.cart.ServiceCartInterface;
 import com.Ali.Store.App.service.checkOut.order.ServiceOrderInterface;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,8 +23,8 @@ public class ConfigTestCheckOutController {
     }
 
     @Bean
-    public JwtServiceInterface mockSecurityBeans() {
-        return mock(JwtServiceInterface.class);
+    public JwtAuthServiceInterface mockSecurityBeans() {
+        return mock(JwtAuthServiceInterface.class);
     }
 
     @Bean

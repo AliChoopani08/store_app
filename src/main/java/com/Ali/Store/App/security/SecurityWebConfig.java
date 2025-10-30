@@ -52,7 +52,10 @@ public class SecurityWebConfig {
                         .permitAll()
                                 .requestMatchers("/admin/**" ,
                                         "/check-out/**",
-                                        "/auth",
+                                        "/auth/me/username",
+                                        "/auth/me/password-verify",
+                                        "/auth/me/password-reset",
+                                        "/auth/refresh-token",
                                         "/profile/**")
                                 .authenticated()
                         .anyRequest()

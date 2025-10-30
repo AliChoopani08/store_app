@@ -11,19 +11,20 @@ import java.util.Date;
 
 
 @Service
-public class JwtServiceImpl implements JwtServiceInterface{
+public class JwtAuthServiceImpl implements JwtAuthServiceInterface {
 
-    private final static String SECRET_KEY = System.getenv("SECRET-KEY-JWT");
-    final Duration duration = Duration.ofMinutes(15); // 15 minutes
+    private final static String SECRET_KEY = System.getenv("SECRET-KEY-JWT_ACCESS_TOKEN");
+    final Duration authTokenExpiryDuration = Duration.ofMinutes(15); // 15 minutes
 
 
 
     @Override
-    public String generateToken(String username) {
-         Instant expiryDate = Instant.now().plus(duration);
+    public String generateAccessToken(String username) {
+         Instant expiryDate = Instant.now().plus(authTokenExpiryDuration);
 
         return Jwts.builder()
                 .subject(username)
+                .claim("tokenType", "ACCESS_TOKEN")
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(expiryDate))
                 .signWith(getKey(SECRET_KEY))
@@ -34,14 +35,14 @@ public class JwtServiceImpl implements JwtServiceInterface{
         if (secret_key == null || secret_key.isEmpty()) {
             throw new IllegalStateException("Environment value = " + secret_key + " is empty or not exists !");
         }
-         byte[] bytesKey = Decoders.BASE64.decode(secret_key); // convert to bite for security and signature
+         byte[] bytesKey = Decoders.BASE64.decode(secret_key); // convert to byte for security and signature
 
         return Keys.hmacShaKeyFor(bytesKey); // create signed key with HMAC algorithm (HS256)
     }
 
     @Override
-    public boolean isTokenValid(String username, String token){
-        return extractUsername(token).equals(username) && !isTokenExpired(token);
+    public boolean isAuthTokenValid(String username, String token){
+        return extractUsername(token).equals(username) && !isAuthTokenExpired(token);
     }
 
     @Override
@@ -55,7 +56,7 @@ public class JwtServiceImpl implements JwtServiceInterface{
     }
 
     @Override
-    public boolean isTokenExpired(String token) {
+    public boolean isAuthTokenExpired(String token) {
             final Date expiration = Jwts.parser()
                     .verifyWith(getKey(SECRET_KEY))
                     .build()
