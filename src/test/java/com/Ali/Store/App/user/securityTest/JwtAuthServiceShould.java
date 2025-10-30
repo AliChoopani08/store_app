@@ -1,26 +1,28 @@
 package com.Ali.Store.App.user.securityTest;
 
-import com.Ali.Store.App.security.jwt.JwtServiceImpl;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.crypto.SecretKey;
-import static org.assertj.core.api.Assertions.assertThat;
 
-public class JwtServiceShould {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+
+public class JwtAuthServiceShould {
 
     @Autowired
-    private JwtServiceImpl jwtService;
+    private JwtAuthServiceImpl jwtService;
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtServiceImpl();
+        jwtService = new JwtAuthServiceImpl();
     }
 
     @Test
-    void generate_token() {
-        final String generatedToken = jwtService.generateToken("chopaniali373@gmail.com");
+    void generate_access_token() {
+        final String generatedToken = jwtService.generateAccessToken("chopaniali373@gmail.com");
 
         assertThat(generatedToken).isInstanceOf(String.class);
     }
@@ -35,7 +37,7 @@ public class JwtServiceShould {
 
     @Test
     void extract_username() {
-        final String token = jwtService.generateToken("chopaniali373@gmail.com");
+        final String token = jwtService.generateAccessToken("chopaniali373@gmail.com");
 
         final String extractedUsername = jwtService.extractUsername(token);
 
@@ -43,11 +45,11 @@ public class JwtServiceShould {
     }
 
     @Test
-    void confirm_validation_token() {
+    void confirm_validation_access_token() {
         final String username = "09330825474";
-        final String token = jwtService.generateToken(username);
+        final String token = jwtService.generateAccessToken(username);
 
-        final boolean isTokenValid = jwtService.isTokenValid(username, token);
+        final boolean isTokenValid = jwtService.isAuthTokenValid(username, token);
 
         assertThat(isTokenValid).isTrue();
     }

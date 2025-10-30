@@ -53,11 +53,11 @@ public class AdminControllerProduct {
         final Map<String, Object> savedProduct = service.createOrUpdateProduct(productRequest);
 
         if (savedProduct.get("status") == INCREASED) {
-            final ApiResponse<Map<String, Object>> responseUpdateProduct = new ApiResponse<>(200,"Product quantity and price is updated",savedProduct);
+            final ApiResponse<Map<String, Object>> responseUpdateProduct = new ApiResponse<>(200,"Product quantity and price updated successfully",savedProduct);
             return ok(responseUpdateProduct);
         }
         else {
-            final ApiResponse<Map<String, Object>> responseCreateProduct = new ApiResponse<>(201, "Product is created", savedProduct);
+            final ApiResponse<Map<String, Object>> responseCreateProduct = new ApiResponse<>(201, "Product created successfully", savedProduct);
             return status(CREATED)
                     .body(responseCreateProduct);
         }
@@ -70,16 +70,16 @@ public class AdminControllerProduct {
     public ResponseEntity<ApiResponse<ProductResponse>> increaseProductQuantity(@PathVariable Long id, @RequestBody @Valid QuantityIncreaseRequest increaseRequest) {
         final ProductResponse increasedQuality = service.increaseQuality(increaseRequest, id);
 
-        return ok(new ApiResponse<ProductResponse>(200, "Product quantity is updated", increasedQuality));
+        return ok(new ApiResponse<>(200, "Product quantity updated successfully.", increasedQuality));
     }
 
 
     @PatchMapping("/price/{id}")
     @Operation(
-            summary = "Update Product Price"
+            summary = "Reset Product Price"
     )
-    public ResponseEntity<ApiResponse<ProductResponse>> updateProductPrice(@PathVariable Long id,@RequestBody @Valid PriceDeltaRequest priceDeltaRequest) {
-        final ProductResponse productResponse = service.updateProductPrice(priceDeltaRequest, id);
+    public ResponseEntity<ApiResponse<ProductResponse>> resetProductPrice(@PathVariable Long id, @RequestBody @Valid PriceDeltaRequest priceDeltaRequest) {
+        final ProductResponse productResponse = service.resetProductPrice(priceDeltaRequest, id);
 
         return ok(new ApiResponse<>(200, "New price registered", productResponse));
     }
@@ -98,10 +98,10 @@ public class AdminControllerProduct {
     @Operation(
             summary = "Delete Product By Id"
     )
-    public void deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         service.deleteProduct(id);
 
-        status(NO_CONTENT)
+        return status(NO_CONTENT)
                 .build();
     }
 }

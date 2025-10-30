@@ -6,6 +6,7 @@ import com.Ali.Store.App.exceptions.productAndCategory.NotFoundProduct;
 import com.Ali.Store.App.exceptions.productAndCategory.UnavailableProduct;
 import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.DuplicateValueException;
+import com.Ali.Store.App.exceptions.security.PasswordVerifyTokenExceptions;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -137,5 +138,11 @@ public class GlobalExceptionHandler {
 
         return status(status)
                 .body(responseError);
+    }
+
+    // Handler All Exceptions to Password Verify Token
+    @ExceptionHandler(PasswordVerifyTokenExceptions.class)
+    public ResponseEntity<ResponseError> passwordVerifyTokenExceptions(HttpServletRequest request, PasswordVerifyTokenExceptions ex) {
+        return getResponseError(BAD_REQUEST, "Invalid Token", ex.getMessage(), request);
     }
 }

@@ -107,7 +107,7 @@ public class ServiceProductImpl implements ServiceProductInterface{
 
     @Override
     @Transactional
-    public ProductResponse updateProductPrice(PriceDeltaRequest desiredProduct, Long productId) {
+    public ProductResponse resetProductPrice(PriceDeltaRequest desiredProduct, Long productId) {
         final Product foundProduct = getProductById(productId);
 
         foundProduct.setPrice(desiredProduct.getNewPrice());

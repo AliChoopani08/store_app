@@ -1,4 +1,4 @@
-package com.Ali.Store.App.security.jwt;
+package com.Ali.Store.App.dto.security;
 
 import com.Ali.Store.App.dto.user.response.UserResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,7 +11,7 @@ import lombok.ToString;
 @Getter
 @ToString(of = {"accessToken"})
 @EqualsAndHashCode(of = {"accessToken"})
-public class JwtResponse {
+public class AuthJwtResponse {
 
     @JsonProperty("Refresh Token")
     private String refreshToken;
@@ -20,7 +20,7 @@ public class JwtResponse {
     @JsonProperty("User")
     private UserResponse userResponse;
 
-    public JwtResponse(String token) {
+    public AuthJwtResponse(String token) {
         this.accessToken = token;
     }
 }

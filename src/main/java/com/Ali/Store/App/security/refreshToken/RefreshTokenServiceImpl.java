@@ -3,6 +3,7 @@ package com.Ali.Store.App.security.refreshToken;
 import com.Ali.Store.App.dto.user.request.RefreshTokenRequest;
 import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
+import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import com.Ali.Store.App.repository.userAndProfileUser.RepositoryRefreshToken;
@@ -27,14 +28,17 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
 
 
     @Override
-    public RefreshToken getByTokenAndDeviceId(RefreshTokenRequest tokenRequest) {
-        return repositoryRefreshToken.findByTokenAndDeviceId(tokenRequest.getRefreshToken(), tokenRequest.getDeviceId())
+    public RefreshToken getByTokenAndDeviceId(String token, String deviceId) {
+        return repositoryRefreshToken.findByTokenAndDeviceId(token, deviceId)
                 .orElseThrow(() -> new NotFoundRefreshToken("This refresh token is not exist in database !"));
     }
 
     @Override
     @Transactional
     public RefreshToken createRefreshToken(Users user, String deviceId, String deviceInfo) {
+        if (repositoryRefreshToken.findByDeviceId(deviceId).isPresent()){
+            throw new DuplicateValueException("This Refresh Token is already active in database. Please generate a new Access Token with this refresh token.");
+        }
         RefreshToken refreshToken = new RefreshToken();
         final String createRandomlyToken = UUID.randomUUID().toString();
 
@@ -48,8 +52,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
     }
 
     @Override
-    public boolean expiredRefreshToken(RefreshTokenRequest tokenRequest) {
-        final RefreshToken foundRefreshToken = getByTokenAndDeviceId(tokenRequest);
+    public boolean expiredRefreshToken(String token, String deviceId) {
+        final RefreshToken foundRefreshToken = getByTokenAndDeviceId(token, deviceId);
 
         return Instant.now().isAfter(foundRefreshToken.getExpiryDate());
     }
@@ -65,7 +69,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
 
     @Override
     public void deleteExpiredUser(RefreshTokenRequest tokenRequest) {
-        final RefreshToken foundRefreshToken = getByTokenAndDeviceId(tokenRequest);
+        final RefreshToken foundRefreshToken = getByTokenAndDeviceId(tokenRequest.getToken(), tokenRequest.getDeviceId());
 
         repositoryRefreshToken.delete(foundRefreshToken);
     }

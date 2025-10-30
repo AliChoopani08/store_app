@@ -17,7 +17,7 @@ public class RefreshTokenRequest {
     @NotBlank(message = "Refresh Token must not be empty !")
     @Schema(description = "The token saved in database of refresh token")
     @JsonProperty("Refresh Token")
-    private String refreshToken;
+    private String token;
 
     @NotBlank(message = "Device Id is empty !")
     @Size(min = 10, max = 500, message = "Device Id must be between 1 until 500 character !")

@@ -1,8 +1,10 @@
 package com.Ali.Store.App.controller.user;
 
-import com.Ali.Store.App.dto.user.request.RefreshTokenRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
-import com.Ali.Store.App.security.jwt.JwtResponse;
+import com.Ali.Store.App.dto.product.response.ApiResponse;
+import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
+import com.Ali.Store.App.dto.user.request.*;
+import com.Ali.Store.App.dto.user.response.UserResponse;
+import com.Ali.Store.App.dto.security.AuthJwtResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationServiceInterface;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,10 +34,10 @@ public class AuthenticationController {
             summary = "User registration",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtResponse> registerUser(@RequestBody @Valid UserRequest userRequest, HttpServletRequest request) {
+    public ResponseEntity<AuthJwtResponse> registerUser(@RequestBody @Valid UserRequest userRequest, HttpServletRequest request) {
         final String deviceInfo = request.getHeader("User-Agent");
 
-        final JwtResponse savedUserToken = service.saveUser(userRequest, deviceInfo);
+        final AuthJwtResponse savedUserToken = service.saveUser(userRequest, deviceInfo);
 
         return status(CREATED)
                 .body(savedUserToken);
@@ -46,10 +48,10 @@ public class AuthenticationController {
             summary = "User logon",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtResponse> loginWithUsername(@RequestBody UserRequest userRequest, HttpServletRequest request) {
+    public ResponseEntity<AuthJwtResponse> loginWithUsername(@RequestBody UserRequest userRequest, HttpServletRequest request) {
         final String deviceInfo = request.getHeader("User-Agent");
 
-        final JwtResponse loggedInUserToken = service.login(userRequest, deviceInfo);
+        final AuthJwtResponse loggedInUserToken = service.login(userRequest, deviceInfo);
 
         return status(CREATED)
                 .body(loggedInUserToken);
@@ -61,14 +63,47 @@ public class AuthenticationController {
             description = "Reconstruction the expired access token with entered refresh token",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtResponse> createNewAccessToken(@RequestBody @Valid RefreshTokenRequest tokenRequest) {
-        final JwtResponse createdNewAccessToken = service.createNewAccessToken(tokenRequest);
+    public ResponseEntity<AuthJwtResponse> createNewAccessToken(@RequestBody @Valid RefreshTokenRequest tokenRequest) {
+        final AuthJwtResponse createdNewAccessToken = service.createNewAccessToken(tokenRequest);
 
         return status(CREATED)
                 .body(createdNewAccessToken);
     }
 
-    @DeleteMapping
+    @PatchMapping("/me/username")
+    @Operation(
+            summary = "Change The logged in User's Username"
+    )
+    public ResponseEntity<ApiResponse<UserResponse>> changeUsername(@AuthenticationPrincipal UserDetailsImpl currentUser, @RequestBody ChangeUsernameRequest usernameRequest) {
+        final UserResponse updateUsernameResponse = service.changeUsername(currentUser.getId(), usernameRequest);
+
+        return ok(new ApiResponse<>(200, "Username updated successfully.", updateUsernameResponse));
+    }
+
+    @PostMapping("/me/password-verify")
+    @Operation(
+            summary = "Password Verification",
+            description = "The first it confirms the previous user's password validity, " +
+                    " Then it generates a password reset token."
+    )
+    public ResponseEntity<ApiResponse<PwdVerifyJwtResponse>> passwordVerify(@AuthenticationPrincipal UserDetailsImpl currentUser, @RequestBody PasswordVerifyRequest passwordVerifyRequest) {
+        final PwdVerifyJwtResponse generatedToken = service.passwordVerify(currentUser.getId(), passwordVerifyRequest);
+
+        return status(CREATED)
+                .body(new ApiResponse<>(201, "The password reset token created successfully", generatedToken));
+    }
+
+    @PatchMapping("/me/password-reset")
+    @Operation(
+            summary = "Change The logged in User's Password"
+    )
+    public ResponseEntity<ApiResponse<UserResponse>> changePassword(@RequestBody PasswordResetRequest passwordResetRequest) {
+        final UserResponse responseRestPassword = service.passwordReset(passwordResetRequest);
+
+        return ok(new ApiResponse<>(200, "Password reset successfully.", responseRestPassword));
+    }
+
+    @DeleteMapping("/refresh-token")
     @Operation(
             summary = "Logout and delete the refresh token"
     )

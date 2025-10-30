@@ -1,24 +1,19 @@
 package com.Ali.Store.App;
 
-import com.Ali.Store.App.dto.product.request.CreateProductRequest;
-import com.Ali.Store.App.dto.product.request.PriceDeltaRequest;
-import com.Ali.Store.App.dto.product.request.QuantityIncreaseRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
-import com.Ali.Store.App.entities.productAndCategory.Category;
-import com.Ali.Store.App.entities.productAndCategory.Product;
-import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
+import com.Ali.Store.App.dto.product.request.*;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
-import com.Ali.Store.App.repository.productAndCategory.RepositoryCategory;
-import com.Ali.Store.App.repository.productAndCategory.RepositoryProduct;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_ADMIN;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -28,129 +23,128 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @TestInstance(PER_CLASS)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestJpaAuditingConfig.class)
+@Transactional
 public class E2ETestForProductAndCategory {
 
     @Autowired
-    private RepositoryProduct repositoryProduct;
-    @Autowired
-    private RepositoryCategory repositoryCategory;
-    @Autowired
-    private RepositoryUser repositoryUser;
+    private ObjectMapper objectMapper;
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private ObjectMapper objectMapper;
+    private PasswordEncoder encoder;
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private JwtAuthServiceInterface jwtAuthService;
 
-    private String jwt;
-
-    @BeforeAll
-    void setUp() { // add some product and category for test methods to database
-
-        Category electronics = new Category("Electronics");
-        repositoryCategory.save(electronics);
-        Category food = new Category("Food");
-        repositoryCategory.save(food);
-
-        Product samsung_laptop = new Product("Samsung Laptop", 2000,5, true, "1-samsung-laptop");
-        electronics.addProduct(samsung_laptop);
-        repositoryProduct.save(samsung_laptop);
-        final Product xiaomi_headphone = new Product("Xiaomi Headphone", 5000, 12, true, "2-xiaomi-headphone");
-        electronics.addProduct(xiaomi_headphone);
-        repositoryProduct.save(xiaomi_headphone);
-        Product macaroni = new Product("Macaroni", 1000, 4, true, "macaroni");
-        food.addProduct(macaroni);
-        repositoryProduct.save(macaroni);
-    }
+    private String jwtAdmin;
 
     @BeforeAll
-    void add_admin_user_before_operations() throws Exception {
-        final Users user = new Users("09112223344", passwordEncoder.encode("Pasww12ord"), ROLE_ADMIN);
-
-        final RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setDeviceId("acer315-55kg");
-        String fakeRefreshToken = "Jsijhdhdgggygeggjjgdygyegy535TWFW667=";
-        refreshToken.setToken(fakeRefreshToken);
-        user.addRefreshToken(refreshToken);
-
-        repositoryUser.save(user);
-
-        final UserRequest loginUserRequest = new UserRequest("09112223344", "Pasww12ord", "acer315-55kg");
-        final String loginResponseApi = mockMvc.perform(post("/auth/login")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginUserRequest)))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        jwt = objectMapper.readTree(loginResponseApi)
-                .get("Access Token")
-                .asText();
+    void setUp() throws Exception {
+        jwtAdmin = registerAnAdminBeforeOperations();
+        createSomeProductBeforeOperations(jwtAdmin);
     }
 
     @Test
-    void create_or_update_product() throws Exception { // ->  test update product
-        final CreateProductRequest productRequest = new CreateProductRequest("Samsung Laptop", 2500, "Electronics", 7);
+    void create_or_update_product() throws Exception {
+        final CreateProductRequest productRequest = new CreateProductRequest("Xiaomi not 10 plus", 3000, "mobile", 5);
 
         mockMvc.perform(post("/admin/product")
-                        .header("Authorization", "Bearer " + jwt)
-                .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(productRequest)))
-
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.product.name").value("Samsung Laptop"))
-                .andExpect(jsonPath("$.data.product.price").value(2500))
-                .andExpect(jsonPath("$.data.product.quantity").value(7))
-                .andExpect(jsonPath("$.data.product.Category.name").value("Electronics"));
+                        .header("Authorization", "Bearer " + jwtAdmin)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Product created successfully"));
     }
 
     @Test
-    void increase_quantity() throws Exception {
-        final QuantityIncreaseRequest increaseQuantityRequest = new QuantityIncreaseRequest(3);
+    void increase_product_quantity() throws Exception {
+        // Previous quantity = 3
+        // Add 2 more items to stoke -> 3 + 2 = 5
+        final QuantityIncreaseRequest increaseRequest = new QuantityIncreaseRequest(2);
 
-        mockMvc.perform(patch("/admin/product/quantity/3")
-                        .header("Authorization", "Bearer " + jwt)
+        mockMvc.perform(patch("/admin/product/quantity/1")
+                        .header("Authorization", "Bearer " + jwtAdmin)
                 .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(increaseQuantityRequest)))
-
+                .content(objectMapper.writeValueAsString(increaseRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("Macaroni"))
-                .andExpect(jsonPath("$.data.quantity").value(7))
-                .andExpect(jsonPath("$.data.Category.name").value("Food"));
+                .andExpect(jsonPath("$.message").value("Product quantity updated successfully."))
+                .andExpect(jsonPath("$.data.quantity").value(5));
+    }
+
+    @Test
+    void reset_price() throws Exception {
+        // Previous Price = 24000
+        final PriceDeltaRequest deltaRequest = new PriceDeltaRequest(30000);
+
+        mockMvc.perform(patch("/admin/product/price/1")
+                .header("Authorization", "Bearer " + jwtAdmin)
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(deltaRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("New price registered"))
+                .andExpect(jsonPath("$.data.price").value(30000));
     }
 
     @Test
     void dynamic_search_product() throws Exception {
-
         mockMvc.perform(get("/product")
-                .param("category", "Elec")
-                .param("maxPrice", "6000")
-                .param("minPrice", "4000")
-                .param("status", "true")
-                .param("page", "0")
-                .param("size", "5"))
-
+                .param("category", "mobile")
+                .param("maxPrice", "35000")
+                .param("minPrice", "30000"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].name").value("Xiaomi Headphone"))
-                .andExpect(jsonPath("$.data.content[0].Category.name").value("Electronics"));
+                .andExpect(jsonPath("$.data.content[0].throw_exception_when_the_refresh_token_is_active_when_user_wants_to_login").value("Iphone 15 pro max"));
     }
 
     @Test
-    void update_price() throws Exception {
-        // old price -> 1000
-        final PriceDeltaRequest priceDeltaRequest = new PriceDeltaRequest(2500);
-
-        mockMvc.perform(patch("/admin/product/price/3")
-                        .header("Authorization", "Bearer " + jwt)
-                .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(priceDeltaRequest)))
-
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("Macaroni"))
-                .andExpect(jsonPath("$.data.Category.name").value("Food"))
-                .andExpect(jsonPath("$.data.price").value(2500));
+    void delete_product() throws Exception {
+        mockMvc.perform(delete("/admin/product/1")
+                .header("Authorization", "Bearer " + jwtAdmin))
+                .andExpect(status().isNoContent());
     }
+
+    private void createSomeProductBeforeOperations(String jwtAdmin) throws Exception {
+        createACategory(jwtAdmin, "Mobile");
+
+        helperCreatingProduct("S24 Ultra samsung", 24000, 3, jwtAdmin);
+
+        helperCreatingProduct("Iphone 15 pro max", 32000, 5, jwtAdmin);
+    }
+
+
+
+    private void createACategory(String jwtAdmin, String categoryName) throws Exception {
+        final CategoryRequest createCategory = new CategoryRequest(categoryName);
+
+        mockMvc.perform(post("/admin/category")
+                .header("Authorization", "Bearer " + jwtAdmin)
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createCategory)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Category created successfully"));
+    }
+
+    private void helperCreatingProduct(String name, int price, int quantity, String jwtAdmin) throws Exception {
+
+        final CreateProductRequest createRequest2 = new CreateProductRequest(name, price, "mobile", quantity);
+        mockMvc.perform(post("/admin/product")
+                        .header("Authorization", "Bearer " + jwtAdmin)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest2)))
+                .andExpect(status().isCreated());
+    }
+
+    private String registerAnAdminBeforeOperations() {
+        final Users admin2 = new Users();
+
+        admin2.setUsername("09123456789");
+        admin2.setPassword(encoder.encode("JAhs544@"));
+        admin2.setRole(ROLE_ADMIN);
+
+        return jwtAuthService.generateAccessToken(admin2.getUsername());
+
+    }
+
 }

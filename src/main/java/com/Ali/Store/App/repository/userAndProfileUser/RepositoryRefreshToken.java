@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 @Repository
@@ -26,5 +26,5 @@ public interface RepositoryRefreshToken extends JpaRepository<RefreshToken, Long
             DELETE FROM RefreshToken rt
             WHERE rt.expiryDate < :now
             """)
-    void deleteAllExpiredRefreshTokens(@Param("now") LocalDateTime now);
+    void deleteAllExpiredRefreshTokens(@Param("now") Instant now);
 }

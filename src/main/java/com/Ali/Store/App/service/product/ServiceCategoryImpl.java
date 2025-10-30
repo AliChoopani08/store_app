@@ -8,6 +8,7 @@ import com.Ali.Store.App.entities.productAndCategory.Category;
 import com.Ali.Store.App.exceptions.productAndCategory.NotFoundCategory;
 import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.repository.productAndCategory.RepositoryCategory;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class ServiceCategoryImpl implements ServiceCategoryInterface{
     private final CategoryMapper mapper;
 
     @Override
+    @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
     repositoryCategory.findByNameIgnoreCase(request.getName())
             .ifPresent(_ -> {
@@ -31,6 +33,7 @@ public class ServiceCategoryImpl implements ServiceCategoryInterface{
     }
 
     @Override
+    @Transactional
     public CategoryResponse changeName(Long id, ChangeNameCategoryRequest request) {
         final Category foundCategory = getCategoryById(id);
 
@@ -50,6 +53,7 @@ public class ServiceCategoryImpl implements ServiceCategoryInterface{
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         repositoryCategory.deleteById(id);
     }
