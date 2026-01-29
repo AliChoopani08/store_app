@@ -17,7 +17,7 @@ public class DataInitializer {
 
     @Bean
     public CommandLineRunner init(RepositoryUser repository, PasswordEncoder passwordEncoder, JwtAuthServiceInterface jwtService, RefreshTokenServiceInterface refreshTokenService) {
-        return _ -> {
+        return __ -> {
             if (repository.count() == 0) {
                 Users admin = new Users();
                 ProfileUser profileAdmin = new ProfileUser();

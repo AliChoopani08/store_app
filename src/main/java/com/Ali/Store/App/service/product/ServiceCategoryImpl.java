@@ -23,7 +23,7 @@ public class ServiceCategoryImpl implements ServiceCategoryInterface{
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
     repositoryCategory.findByNameIgnoreCase(request.getName())
-            .ifPresent(_ -> {
+            .ifPresent(__ -> {
                 throw new DuplicateValueException("This category is already exist !");
             });
         final Category category = mapper.categoryRequestToCategory(request);

@@ -13,7 +13,15 @@ import java.util.Date;
 @Service
 public class JwtAuthServiceImpl implements JwtAuthServiceInterface {
 
-    private final static String SECRET_KEY = System.getenv("SECRET-KEY-JWT_ACCESS_TOKEN");
+    private final String SECRET_KEY;
+
+    public JwtAuthServiceImpl() {
+        this.SECRET_KEY=System.getenv("SECRET_KEY");
+        if (this.SECRET_KEY == null || this.SECRET_KEY.isEmpty()) {
+            throw new IllegalStateException("Environment variable is empty or not exists !");
+        }
+    }
+
     final Duration authTokenExpiryDuration = Duration.ofMinutes(15); // 15 minutes
 
 
@@ -32,9 +40,6 @@ public class JwtAuthServiceImpl implements JwtAuthServiceInterface {
     }
 
     public SecretKey getKey(String secret_key) {
-        if (secret_key == null || secret_key.isEmpty()) {
-            throw new IllegalStateException("Environment value = " + secret_key + " is empty or not exists !");
-        }
          byte[] bytesKey = Decoders.BASE64.decode(secret_key); // convert to byte for security and signature
 
         return Keys.hmacShaKeyFor(bytesKey); // create signed key with HMAC algorithm (HS256)

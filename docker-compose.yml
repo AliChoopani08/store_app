@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-store-container
+
+    ports:
+      - "${DB_PORT}:3306"
+
+    restart: always
+
+    healthcheck:
+      test: [ "CMD","mysqladmin","ping","-h","localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+
+    volumes:
+      - store-app-volume:/var/lib/mysql
+
+  backend:
+    build: .
+    container_name: backend-store-container
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    restart: always
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY_ACCESS_TOKEN}
+
+volumes:
+  store-app-volume:

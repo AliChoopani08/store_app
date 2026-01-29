@@ -22,6 +22,8 @@ import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -145,11 +147,11 @@ public class AuthenticationServiceImpl implements AuthenticationServiceInterface
 
         user.setPassword(encodedPassword);
         user.setProfileFields(profile);
-        repository.findByUsername(registerRequest.getUsername()).ifPresent(_ -> {
+        repository.findByUsername(registerRequest.getUsername()).ifPresent(__ -> {
             throw new DuplicateValueException("This Username is already registered ! ");
         });
         repositoryRefreshToken.findByDeviceId(registerRequest.getDeviceId())
-                .ifPresent(_ -> {
+                .ifPresent(__ -> {
                     throw new DuplicateValueException("This device id is already exist !");
                 });
 

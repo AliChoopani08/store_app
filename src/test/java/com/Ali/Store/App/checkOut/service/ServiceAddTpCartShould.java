@@ -86,7 +86,7 @@ public class ServiceAddTpCartShould {
                 .thenReturn(cart);
         final List<CartItemDto> cartItemDto = List.of(new CartItemDto(2L, 3L, "Zar Macaron", "Food", 6000, 3), new CartItemDto(3L, 5L, "Iphone 13 pro max", "Mobile", 11500, 3));
         when(repositoryCartItems.findRequestedUserCartItemsDetails(any(Long.class)))
-                .thenAnswer(_ -> cartItemDto);
+                .thenAnswer(__ -> cartItemDto);
 
         final Map<String, Object> savedCart = serviceCart.addToCart(5L, orderItemsRequest);
 

@@ -1,11 +1,14 @@
 package com.Ali.Store.App;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestForCreateSlug {
     @Test
@@ -50,20 +53,16 @@ public class TestForCreateSlug {
     void name() {
         String productName = "Iphone Pro Max 16";
 
-        for (int i=0; i < 4; i++) {
+        StringBuilder result = new StringBuilder();
+        for (int i=0; i < productName.split(" ").length; i++) {
             final String[] split = productName.split(" ");
+            final String lowerCase = split[i].toLowerCase();
 
-            System.out.println(Arrays.toString(split));
-
-            final String[] lowerCase = split[i].toLowerCase().split(" ");
-
-            System.out.println(Arrays.toString(lowerCase) + "  lower");
-
-            String result = null;
-            String f = result + "-" + lowerCase[i];
-
-            System.out.println(f);
+            result.append("-").append(lowerCase);
         }
+
+           result = new StringBuilder(result.toString().replaceFirst("-", ""));
+            assertThat(result.toString()).isEqualTo("iphone-pro-max-16");
 
     }
 }
