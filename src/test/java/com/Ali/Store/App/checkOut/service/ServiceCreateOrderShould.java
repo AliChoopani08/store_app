@@ -85,7 +85,7 @@ public class ServiceCreateOrderShould {
         when(repositoryOrder.save(any(Orders.class)))
                 .thenReturn(order);
         when(repositoryProduct.saveAll(any(Iterable.class)))
-                .thenAnswer(_ -> List.of(
+                .thenAnswer(__ -> List.of(
                         new Product(4L, "Sesame Oil", 2000, 2, true, "sesame-oil"),
                         new Product(12L, "Garlic Shampoo", 3000, 6,true, "garlic-shampoo")
                 ));

@@ -21,14 +21,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 import java.time.LocalDate;
-import java.util.LinkedList;
 import java.util.List;
 import static java.time.LocalDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
 @DataJpaTest
+@ActiveProfiles("test")
 public class OperationsRelatedByPlaceOrderTest {
 
 
@@ -47,8 +48,6 @@ public class OperationsRelatedByPlaceOrderTest {
     @Autowired
     private RepositoryOrderItems repositoryOrderItems;
 
-    private final List<Product> savedProducts = new LinkedList<>();
-    private Users savedUser;
 
     @BeforeEach
     void add_some_products_before_operations() {
@@ -56,7 +55,7 @@ public class OperationsRelatedByPlaceOrderTest {
         final ProfileUser profileUser = new ProfileUser("Ali", "09123456789", null, LocalDate.of(2005, 4, 23));
         user.setProfileFields(profileUser);
         user.setCreatedAt(now());
-        savedUser = repositoryUser.save(user);
+        repositoryUser.save(user);
 
         Category food = new Category("Food");
         repositoryCategory.save(food);
@@ -65,76 +64,72 @@ public class OperationsRelatedByPlaceOrderTest {
                 new Product("Dip Eggplant With Pickle", 2500, 6, true, "dip-eggplant-with-pickle"));
 
         products.forEach(food::addProduct);
-
-        savedProducts.addAll(repositoryProduct.saveAll(products));
+        repositoryProduct.saveAll(products);
     }
 
     @Test
     void find_user_cartItems_detail() {
+        final Users savedUser = repositoryUser.findAll().getFirst();
         CartItems cartItems = new CartItems();
-        cartItems.setProduct(savedProducts.getFirst());
-        cartItems.setQuantity(3);
-
         final Cart cart = new Cart();
+        final Product getFirstProduct = repositoryProduct.findAll().getFirst();
+
+        cartItems.setProduct(getFirstProduct);
+        cartItems.setQuantity(3);
         savedUser.addCart(cart);
         cart.addCartItems(List.of(cartItems));
-
         repositoryCart.save(cart);
 
-        final List<CartItemDto> cartItemsOfFoundUser = repositoryCartItems.findRequestedUserCartItemsDetails(1L);
-
-        System.out.println(cartItemsOfFoundUser + "  the first");
-
+        final List<CartItemDto> cartItemsOfFoundUser = repositoryCartItems.findRequestedUserCartItemsDetails(savedUser.getId());
         assertThat(cartItemsOfFoundUser)
-                .isEqualTo(List.of(new CartItemDto(1L, 1L, "Fish Stew With Rice", "Food",3000, 3)));
+                .isEqualTo(List.of(new CartItemDto(1L, 3L, "Fish Stew With Rice", "Food",9000, 3)));
     }
 
     @Test
     void find_cart_items_detail_for_response() {
+        final Users savedUser = repositoryUser.findAll().getFirst();
         CartItems cartItem1 = new CartItems();
-        cartItem1.setProduct(savedProducts.getFirst());
-        cartItem1.setQuantity(2);
-
         final Cart cart = new Cart();
-        savedUser.addCart(cart);
-
         final CartItems cartItem2 = new CartItems();
-        cartItem2.setProduct(savedProducts.get(1));
+        final Product getFirstProduct = repositoryProduct.findAll().getFirst();
+        final Product getSecondProduct = repositoryProduct.findAll().get(1);
+
+        cartItem1.setProduct(getFirstProduct);
+        cartItem1.setQuantity(2);
+        savedUser.addCart(cart);
+        cartItem2.setProduct(getSecondProduct);
         cartItem2.setQuantity(4);
-
         cart.addCartItems(List.of(cartItem1, cartItem2));
-
         repositoryCart.save(cart);
 
-        final List<CartItemDto> itemsDetailOfFoundUser = repositoryCartItems.findRequestedUserCartItemsDetails(1L);
-
-        System.out.println(itemsDetailOfFoundUser  + "  the second");
-
-        List<CartItemDto> exceptedCartItemsDetail = List.of(new CartItemDto(1L,1L,"Fish Stew With Rice","Food",3000,2)
-                            , new CartItemDto(2L,2L,"Dip Eggplant With Pickle", "Food", 2500, 4));
+        final List<CartItemDto> itemsDetailOfFoundUser = repositoryCartItems.findRequestedUserCartItemsDetails(savedUser.getId());
+        List<CartItemDto> exceptedCartItemsDetail = List.of(new CartItemDto(2L,5L,"Fish Stew With Rice","Food",6000,2)
+                            , new CartItemDto(3L,6L,"Dip Eggplant With Pickle", "Food", 10000, 4));
         assertThat(itemsDetailOfFoundUser)
                 .isEqualTo(exceptedCartItemsDetail);
     }
 
     @Test
     void findOrderItemsDetailForDto() {
+        final Users savedUser = repositoryUser.findAll().getFirst();
         final Orders order1 = new Orders();
-        savedUser.addOrder(order1);
         final OrderItems orderItem1 = new OrderItems();
-        orderItem1.setProduct(savedProducts.getFirst());
-        orderItem1.setPrice(savedProducts.getFirst().getPrice());
-        orderItem1.setQuantity(5);
+        final OrderItems orderItem2 = new OrderItems();
+        final Orders order2 = new Orders();
+        final Product getFirstProduct = repositoryProduct.findAll().getFirst();
+        final Product getSecondProduct = repositoryProduct.findAll().get(1);
 
+        savedUser.addOrder(order1);
+        orderItem1.setProduct(getFirstProduct);
+        orderItem1.setPrice(getFirstProduct.getPrice());
+        orderItem1.setQuantity(5);
         order1.setBidirectionalRelationBetweenOrderAndOrderItems(List.of(orderItem1));
         order1.setCreatedAt(now());
         repositoryOrder.save(order1);
-
-        final Orders order2 = new Orders();
         savedUser.addOrder(order2);
 
-        final OrderItems orderItem2 = new OrderItems();
-        orderItem2.setProduct(savedProducts.get(1));
-        orderItem2.setPrice(savedProducts.get(1).getPrice());
+        orderItem2.setProduct(getSecondProduct);
+        orderItem2.setPrice(getSecondProduct.getPrice());
         orderItem2.setQuantity(3);
 
         order2.setBidirectionalRelationBetweenOrderAndOrderItems(List.of(orderItem2));

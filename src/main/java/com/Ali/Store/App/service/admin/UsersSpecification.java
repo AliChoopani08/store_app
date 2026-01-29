@@ -6,7 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 public class UsersSpecification {
 
     public static Specification<Users> withUsername(String username) {
-        return ((root, _, criteriaBuilder) ->
+        return ((root, __, criteriaBuilder) ->
                 username == null ? null : criteriaBuilder
                         .like(criteriaBuilder
                                 .lower(root.get("username"))

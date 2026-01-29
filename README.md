@@ -1,5 +1,5 @@
 # 🏪 Store App
-A full-featured online store backend built with Java & Spring Boot — focused on security, scalability, and clean architecture.
+A full-featured online store backend built with Java(v 24) & Spring Boot — focused on security, scalability, and clean architecture.
 
 ---
 
@@ -139,7 +139,7 @@ installed:
 
 ### 🔹 2. Clone the repository
 ```bash
-git clone https://github.com/<your-username>/store-app.git
+git clone https://github.com/AliChoopani08/store-app.git
 cd store-app
 ```
 ### 🔹 3. Set up the database

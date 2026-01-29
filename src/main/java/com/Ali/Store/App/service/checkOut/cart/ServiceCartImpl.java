@@ -20,6 +20,7 @@ import com.Ali.Store.App.service.product.ItemStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
@@ -50,19 +51,19 @@ import static com.Ali.Store.App.service.product.ItemStatus.INCREASED;
  * 1. Identify the logged-in user using @AuthenticationPrincipal.<br>
  * 2. Check if the product exists in the cart.<br>
  * 3. Handle two cases :<br>
- *              - Existing product: update the quantity.
- *              - New product: create a new CartItem and add
- *              it to the cart.<br>
+ * - Existing product: update the quantity.
+ * - New product: create a new CartItem and add
+ * it to the cart.<br>
  * 4. Check if the user has a cart in database.<br>
  * 5. Handle two cases :<br>
- *              - Has cart: The cart-items are added to existing cart.<br>
- *              - Doesn't have cart: A new cart is created for this user. <br>
+ * - Has cart: The cart-items are added to existing cart.<br>
+ * - Doesn't have cart: A new cart is created for this user. <br>
  * 6. Save the changes to the database.
  * </p>
  */
 @Service
 @RequiredArgsConstructor
-public class ServiceCartImpl implements ServiceCartInterface{
+public class ServiceCartImpl implements ServiceCartInterface {
 
     private final RepositoryUser repositoryUser;
     private final RepositoryProduct repositoryProduct;
