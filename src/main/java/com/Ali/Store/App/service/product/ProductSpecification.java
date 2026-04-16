@@ -5,6 +5,8 @@ import com.Ali.Store.App.entities.productAndCategory.Product;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
+import static jakarta.persistence.criteria.JoinType.INNER;
+
 
 public class ProductSpecification {
 
@@ -21,7 +23,7 @@ public class ProductSpecification {
             if (category == null) {
                 return null;
             }
-            Join<Product, Category> categoryJoin = root.join("category");
+            Join<Product, Category> categoryJoin = root.join("category", INNER);
             return criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), "%" + category.toLowerCase() + "%");
         };
     }

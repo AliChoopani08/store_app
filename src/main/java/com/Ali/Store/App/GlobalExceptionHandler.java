@@ -4,6 +4,7 @@ import com.Ali.Store.App.exceptions.checkout.InsufficientProductQuantity;
 import com.Ali.Store.App.exceptions.productAndCategory.NotFoundCategory;
 import com.Ali.Store.App.exceptions.productAndCategory.NotFoundProduct;
 import com.Ali.Store.App.exceptions.productAndCategory.UnavailableProduct;
+import com.Ali.Store.App.exceptions.security.JwtPasswordExpiredException;
 import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.exceptions.security.PasswordVerifyTokenExceptions;
@@ -19,8 +20,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import static java.time.LocalDateTime.now;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.status;
@@ -44,9 +47,9 @@ public class GlobalExceptionHandler {
 
     // Not Found User
     @ExceptionHandler(NotFoundUser.class)
-    public ResponseEntity<ResponseError> handlerNotFoundUserError(HttpServletRequest request) {
+    public ResponseEntity<ResponseError> handlerNotFoundUserError(HttpServletRequest request, NotFoundUser ex) {
 
-        return getResponseError(NOT_FOUND, "Not Found", "Not Found User With This Username", request);
+        return getResponseError(NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
     // Invalid URL
@@ -100,27 +103,27 @@ public class GlobalExceptionHandler {
 
     // Not Found Refresh Token
     @ExceptionHandler(NotFoundRefreshToken.class)
-    public ResponseEntity<ResponseError> notFoundRefreshToken(HttpServletRequest request) {
-        return getResponseError(NOT_FOUND, "Not Found", "This refresh token is not exist in database !", request);
+    public ResponseEntity<ResponseError> notFoundRefreshToken(HttpServletRequest request, NotFoundRefreshToken ex) {
+        return getResponseError(NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
 
     // Not Found Category
     @ExceptionHandler(NotFoundCategory.class)
-    public ResponseEntity<ResponseError> notFoundThisCategory(HttpServletRequest request) {
-        return getResponseError(NOT_FOUND, "Not Found", "This category is not exist in database !", request);
+    public ResponseEntity<ResponseError> notFoundThisCategory(HttpServletRequest request, NotFoundCategory ex) {
+        return getResponseError(NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
     // Unavailable Product
     @ExceptionHandler(UnavailableProduct.class)
-    public ResponseEntity<ResponseError> unavailableProduct(HttpServletRequest request) {
-        return getResponseError(CONFLICT, "Unavailable", "This product is unavailable !", request);
+    public ResponseEntity<ResponseError> unavailableProduct(HttpServletRequest request, UnavailableProduct ex) {
+        return getResponseError(CONFLICT, "Unavailable", ex.getMessage(), request);
     }
 
     //Not Found Product
     @ExceptionHandler(NotFoundProduct.class)
-    public ResponseEntity<ResponseError> notFoundProdcuct(HttpServletRequest request) {
-        return getResponseError(NOT_FOUND, "Not Found", "This product is not exist in database !", request);
+    public ResponseEntity<ResponseError> notFoundProduct(HttpServletRequest request, NotFoundProduct ex) {
+        return getResponseError(NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
     // Not Enough The Quantity Of Product For This Order
@@ -128,6 +131,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseError> notEnoughProductQuantity(HttpServletRequest request, InsufficientProductQuantity ex) {
         return getResponseError(CONFLICT, "Not Enough", ex.getMessage(), request);
     }
+
+    // Handler Expired Jwt Password Token
+    @ExceptionHandler(JwtPasswordExpiredException.class)
+    public ResponseEntity<ResponseError> jwtPasswordExpiredHandle(HttpServletRequest request, JwtPasswordExpiredException ex) {
+        return getResponseError(BAD_REQUEST, "Expired Token", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(PasswordVerifyTokenExceptions.class)
+    public ResponseEntity<ResponseError> passwordVerifyTokenHandle(HttpServletRequest request, PasswordVerifyTokenExceptions ex) {
+        return getResponseError(BAD_REQUEST, "Invalid Token" , ex.getMessage(), request);
+    }
+
+
 
     private static ResponseEntity<ResponseError> getResponseError(HttpStatus status, String error, String message, HttpServletRequest request) {
         final ResponseError responseError = new ResponseError(now()
@@ -140,9 +156,4 @@ public class GlobalExceptionHandler {
                 .body(responseError);
     }
 
-    // Handler All Exceptions to Password Verify Token
-    @ExceptionHandler(PasswordVerifyTokenExceptions.class)
-    public ResponseEntity<ResponseError> passwordVerifyTokenExceptions(HttpServletRequest request, PasswordVerifyTokenExceptions ex) {
-        return getResponseError(BAD_REQUEST, "Invalid Token", ex.getMessage(), request);
-    }
 }

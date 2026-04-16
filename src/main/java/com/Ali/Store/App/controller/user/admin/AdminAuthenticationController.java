@@ -3,8 +3,8 @@ package com.Ali.Store.App.controller.user.admin;
 
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.user.request.CreateAdminRequest;
-import com.Ali.Store.App.dto.security.AuthJwtResponse;
-import com.Ali.Store.App.service.user.authentication.AuthenticationServiceInterface;
+import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.service.user.authentication.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,17 +23,17 @@ import static org.springframework.http.ResponseEntity.status;
 @RequiredArgsConstructor
 public class AdminAuthenticationController {
 
-    private final AuthenticationServiceInterface service;
+    private final AuthenticationService service;
 
     @PostMapping("/register")
     @Operation(
             summary = "Create Another Admin",
             description = "Just an admin who has logged in can register another admin"
     )
-    public ResponseEntity<ApiResponse<AuthJwtResponse>> createAdminAccount(@RequestBody @Valid CreateAdminRequest createAdminRequest, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<JwtAuthResponse>> createAdminAccount(@RequestBody @Valid CreateAdminRequest createAdminRequest, HttpServletRequest request) {
         final String deviceId = request.getHeader("User-Agent");
 
-        final AuthJwtResponse jwtResponse = service.saveAdmin(createAdminRequest, deviceId);
+        final JwtAuthResponse jwtResponse = service.saveAdmin(createAdminRequest, deviceId);
 
         return status(CREATED)
                 .body(new ApiResponse<>(201, "A new admin person registered successfully.", jwtResponse));

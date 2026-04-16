@@ -3,10 +3,10 @@ package com.Ali.Store.App.controller.user;
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.request.*;
-import com.Ali.Store.App.dto.user.response.UserResponse;
-import com.Ali.Store.App.dto.security.AuthJwtResponse;
+import com.Ali.Store.App.dto.user.response.UserSummary;
+import com.Ali.Store.App.dto.security.JwtAuthResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
-import com.Ali.Store.App.service.user.authentication.AuthenticationServiceInterface;
+import com.Ali.Store.App.service.user.authentication.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.ResponseEntity.*;
@@ -26,7 +27,7 @@ import static org.springframework.http.ResponseEntity.*;
 @RequiredArgsConstructor
 public class AuthenticationController {
 
-    private final AuthenticationServiceInterface service;
+    private final AuthenticationService service;
 
 
     @PostMapping("/register")
@@ -34,10 +35,10 @@ public class AuthenticationController {
             summary = "User registration",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<AuthJwtResponse> registerUser(@RequestBody @Valid UserRequest userRequest, HttpServletRequest request) {
+    public ResponseEntity<JwtAuthResponse> registerUser(@RequestBody @Valid UserRequest userRequest, HttpServletRequest request) {
         final String deviceInfo = request.getHeader("User-Agent");
 
-        final AuthJwtResponse savedUserToken = service.saveUser(userRequest, deviceInfo);
+        final JwtAuthResponse savedUserToken = service.saveUser(userRequest);
 
         return status(CREATED)
                 .body(savedUserToken);
@@ -48,10 +49,10 @@ public class AuthenticationController {
             summary = "User logon",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<AuthJwtResponse> loginWithUsername(@RequestBody UserRequest userRequest, HttpServletRequest request) {
+    public ResponseEntity<JwtAuthResponse> loginWithUsername(@RequestBody UserRequest userRequest, HttpServletRequest request) {
         final String deviceInfo = request.getHeader("User-Agent");
 
-        final AuthJwtResponse loggedInUserToken = service.login(userRequest, deviceInfo);
+        final JwtAuthResponse loggedInUserToken = service.login(userRequest, deviceInfo);
 
         return status(CREATED)
                 .body(loggedInUserToken);
@@ -63,8 +64,8 @@ public class AuthenticationController {
             description = "Reconstruction the expired access token with entered refresh token",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<AuthJwtResponse> createNewAccessToken(@RequestBody @Valid RefreshTokenRequest tokenRequest) {
-        final AuthJwtResponse createdNewAccessToken = service.createNewAccessToken(tokenRequest);
+    public ResponseEntity<JwtAuthResponse> createNewAccessToken(@RequestBody @Valid RefreshTokenRequest tokenRequest) {
+        final JwtAuthResponse createdNewAccessToken = service.createNewAccessToken(tokenRequest);
 
         return status(CREATED)
                 .body(createdNewAccessToken);
@@ -74,10 +75,10 @@ public class AuthenticationController {
     @Operation(
             summary = "Change The logged in User's Username"
     )
-    public ResponseEntity<ApiResponse<UserResponse>> changeUsername(@AuthenticationPrincipal UserDetailsImpl currentUser, @RequestBody ChangeUsernameRequest usernameRequest) {
-        final UserResponse updateUsernameResponse = service.changeUsername(currentUser.getId(), usernameRequest);
+    public ResponseEntity<ApiResponse<UserSummary>> changeUsername(@AuthenticationPrincipal UserDetailsImpl currentUser, @RequestBody ChangeUsernameRequest usernameRequest) {
+        final UserSummary updateUsernameResponse = service.changeUsername(currentUser.getId(), usernameRequest);
 
-        return ok(new ApiResponse<>(200, "Username updated successfully.", updateUsernameResponse));
+        return ok(new ApiResponse<>(200, "Username updated successfully", updateUsernameResponse));
     }
 
     @PostMapping("/me/password-verify")
@@ -97,8 +98,8 @@ public class AuthenticationController {
     @Operation(
             summary = "Change The logged in User's Password"
     )
-    public ResponseEntity<ApiResponse<UserResponse>> changePassword(@RequestBody PasswordResetRequest passwordResetRequest) {
-        final UserResponse responseRestPassword = service.passwordReset(passwordResetRequest);
+    public ResponseEntity<ApiResponse<UserSummary>> changePassword(@RequestBody PasswordResetRequest passwordResetRequest) {
+        final UserSummary responseRestPassword = service.passwordReset(passwordResetRequest);
 
         return ok(new ApiResponse<>(200, "Password reset successfully.", responseRestPassword));
     }
@@ -110,7 +111,7 @@ public class AuthenticationController {
     public ResponseEntity<Void> logout(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         service.logout(currentUser.getId());
 
-       return status(NO_CONTENT)
+        return status(NO_CONTENT)
                 .build();
     }
 }

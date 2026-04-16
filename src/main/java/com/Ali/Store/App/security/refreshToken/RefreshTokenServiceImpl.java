@@ -6,14 +6,15 @@ import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryRefreshToken;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.repository.RefreshTokenRepository;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -23,20 +24,21 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
     private final Duration duration = Duration.ofDays(20); // for 20 days
     private final Instant expiryDate = Instant.now().plus(duration); // plus duration to time now
 
-    private final RepositoryRefreshToken repositoryRefreshToken;
-    private final RepositoryUser repositoryUser;
+    private final RefreshTokenRepository repositoryRefreshToken;
+    private final UserRepository repositoryUser;
 
 
     @Override
     public RefreshToken getByTokenAndDeviceId(String token, String deviceId) {
         return repositoryRefreshToken.findByTokenAndDeviceId(token, deviceId)
-                .orElseThrow(() -> new NotFoundRefreshToken("This refresh token is not exist in database !"));
+                .orElseThrow(NotFoundRefreshToken::new);
     }
 
     @Override
     @Transactional
     public RefreshToken createRefreshToken(Users user, String deviceId, String deviceInfo) {
-        if (repositoryRefreshToken.findByDeviceId(deviceId).isPresent()){
+        final Optional<RefreshToken> byDeviceId = repositoryRefreshToken.findByDeviceId(deviceId);
+        if (byDeviceId.isPresent() && !expiredRefreshToken(byDeviceId.get().getToken(), byDeviceId.get().getDeviceId())) {
             throw new DuplicateValueException("This Refresh Token is already active in database. Please generate a new Access Token with this refresh token.");
         }
         RefreshToken refreshToken = new RefreshToken();
@@ -61,8 +63,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
     @Override
     @Transactional
     public void deleteByUser(Users user) {
-        final Users foundUser = repositoryUser.findByUsername(user.getUsername())
-                .orElseThrow(() -> new NotFoundUser("Not found this user! "));
+        final String username = user.getUsername();
+
+        final Users foundUser = repositoryUser.findByUsername(username)
+                .orElseThrow(() -> new NotFoundUser(username));
 
         repositoryRefreshToken.deleteByUser(foundUser);
     }

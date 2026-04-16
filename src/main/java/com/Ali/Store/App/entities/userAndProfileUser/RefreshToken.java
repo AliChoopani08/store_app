@@ -2,8 +2,6 @@ package com.Ali.Store.App.entities.userAndProfileUser;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -13,8 +11,8 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @Getter
 @Setter
-@Service
 @ToString
+@Builder
 public class RefreshToken {
 
     @Id

@@ -7,12 +7,14 @@ import lombok.*;
 import java.time.LocalDate;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+@AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @ToString(of = {"name", "phoneNumber", "email", "birthData"})
 @EqualsAndHashCode(of = {"name", "phoneNumber", "email", "birthData"})
 @Entity
+@Builder(toBuilder = true)
 public class ProfileUser {
 
     @Id

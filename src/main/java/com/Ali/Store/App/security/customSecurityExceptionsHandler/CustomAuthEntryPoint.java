@@ -48,7 +48,7 @@ public class CustomAuthEntryPoint implements AuthenticationEntryPoint {
             message = "This username doesn't exist in database !";
         }
         else if (authException instanceof LockedException) {
-            message = "This account locked has been locked !";
+            message = "This account has been locked !";
         }
         else if (authException instanceof InsufficientAuthenticationException) {
             message = "To access this recourse, You must be logged in";

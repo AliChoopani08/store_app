@@ -1,7 +1,7 @@
 package com.Ali.Store.App.security.userDetails;
 
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +14,7 @@ import static java.util.Collections.singleton;
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
-    private final RepositoryUser repositoryUser;
+    private final UserRepository repositoryUser;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

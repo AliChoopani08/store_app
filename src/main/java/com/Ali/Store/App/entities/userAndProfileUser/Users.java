@@ -4,10 +4,7 @@ import com.Ali.Store.App.entities.checkout.Cart;
 import com.Ali.Store.App.entities.checkout.Orders;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -25,6 +22,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Setter
 @ToString(of = {"username", "password"})
 @EqualsAndHashCode(of = {"username", "password"})
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder(toBuilder = true)
 public class Users {
 
     @Id
@@ -48,12 +48,13 @@ public class Users {
     @OneToOne(mappedBy = "user", cascade = ALL, orphanRemoval = true)
     private Cart cart;
 
-    @OneToMany(mappedBy = "user", cascade = ALL, orphanRemoval = true)
-    List<Orders> orders = new ArrayList<>();
+    @OneToMany(mappedBy = "user", cascade = ALL, fetch = LAZY)
+   private List<Orders> orders = new ArrayList<>();
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
+    private boolean status;
 
 
     public Users(String username, String password) { // for SingUp
@@ -73,15 +74,16 @@ public class Users {
         this.role = role;
     }
 
-    public Users() {}
-
     public void setProfileFields(ProfileUser profile) {
         profile.setUsernameOnCorrectFields(this);
-        this.profile = profile;
+        this.setProfile(profile);
         profile.setUser(this);
     }
 
     public void addOrder(Orders order) {
+        if (this.orders == null) {
+            this.orders = new ArrayList<>();
+        }
         this.getOrders().add(order);
         order.setUser(this);
     }
@@ -92,6 +94,9 @@ public class Users {
     }
 
     public void addRefreshToken(RefreshToken refreshToken) {
+        if (this.getRefreshTokens() == null) {
+            this.refreshTokens = new ArrayList<>();
+        }
         this.getRefreshTokens().add(refreshToken);
         refreshToken.setUser(this);
     }

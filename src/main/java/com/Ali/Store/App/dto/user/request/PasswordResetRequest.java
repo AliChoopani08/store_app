@@ -1,6 +1,7 @@
 package com.Ali.Store.App.dto.user.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.Setter;
 public class PasswordResetRequest {
         @NotBlank(message = "Password Rest Token can't be empty")
         @JsonProperty("Password Rest Token")
+        @Schema(description = "It must be the generated reset password token from Password verify endpoint")
         private String passwordRestToken;
 
         @NotBlank(message = "New password can't be empty !")

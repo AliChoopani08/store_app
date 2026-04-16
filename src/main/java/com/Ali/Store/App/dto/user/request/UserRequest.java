@@ -5,15 +5,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
 @Getter
+@Builder
 public class UserRequest implements CommonFieldsForSavePeople {
     @NotBlank(message = "Username must not be blank !")
     @Pattern(regexp = "^(09\\d{9}|[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+)$", message = "Username must be a valid email or phone number !")

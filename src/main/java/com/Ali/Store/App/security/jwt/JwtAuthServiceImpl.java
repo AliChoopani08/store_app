@@ -16,9 +16,9 @@ public class JwtAuthServiceImpl implements JwtAuthServiceInterface {
     private final String SECRET_KEY;
 
     public JwtAuthServiceImpl() {
-        this.SECRET_KEY=System.getenv("SECRET_KEY");
+        this.SECRET_KEY=System.getenv("SECRET_KEY_ACCESS_TOKEN");
         if (this.SECRET_KEY == null || this.SECRET_KEY.isEmpty()) {
-            throw new IllegalStateException("Environment variable is empty or not exists !");
+            throw new IllegalStateException("Environment variable is empty or doesn't exist !");
         }
     }
 

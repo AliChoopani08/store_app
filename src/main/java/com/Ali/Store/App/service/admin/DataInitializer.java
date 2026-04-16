@@ -3,7 +3,7 @@ package com.Ali.Store.App.service.admin;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
 import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
 import org.springframework.boot.CommandLineRunner;
@@ -16,7 +16,7 @@ import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_ADMIN;
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner init(RepositoryUser repository, PasswordEncoder passwordEncoder, JwtAuthServiceInterface jwtService, RefreshTokenServiceInterface refreshTokenService) {
+    public CommandLineRunner init(UserRepository repository, PasswordEncoder passwordEncoder, JwtAuthServiceInterface jwtService, RefreshTokenServiceInterface refreshTokenService) {
         return __ -> {
             if (repository.count() == 0) {
                 Users admin = new Users();
