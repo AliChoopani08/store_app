@@ -2,7 +2,7 @@ package com.Ali.Store.App.dto.user;
 
 import com.Ali.Store.App.dto.user.request.CreateAdminRequest;
 import com.Ali.Store.App.dto.user.request.ProfileRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.dto.user.response.ProfileSummary;
 import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
@@ -20,7 +20,7 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 @Component("userMapper")
 public interface UserMapper {
 
-    Users toEntity(UserRequest userRequest);
+    Users toEntity(RegisterUserRequest userRequest);
 
     @Mapping(source = "profile", target = "profileSummary")
     UserSummary toSummary(Users user);

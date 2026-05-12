@@ -1,9 +1,9 @@
 package com.Ali.Store.App.user.validation;
 
 
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.testConfigs.TestSecurityConfig;
 import com.Ali.Store.App.controller.user.AuthenticationController;
-import com.Ali.Store.App.dto.user.request.UserRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +28,11 @@ public class ValidationAuthenticationClassTest {
     @Autowired
     private ObjectMapper mapper;
 
-    private UserRequest req;
+    private RegisterUserRequest req;
 
     @BeforeEach
     void setUp() {
-        req = UserRequest.builder()
+        req = RegisterUserRequest.builder()
                 .username("09876543210")
                 .password("fake.password")
                 .build();

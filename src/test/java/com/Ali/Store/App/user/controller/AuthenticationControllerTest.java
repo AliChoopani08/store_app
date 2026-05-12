@@ -1,10 +1,12 @@
 package com.Ali.Store.App.user.controller;
 
+import com.Ali.Store.App.dto.user.request.LoginUserRequest;
+import com.Ali.Store.App.dto.user.request.LogoutRequest;
 import com.Ali.Store.App.dto.user.request.RefreshTokenRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.controller.user.AuthenticationController;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.testConfigs.TestSecurityConfig;
 import com.Ali.Store.App.service.user.authentication.AuthenticationService;
@@ -18,9 +20,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
 import static com.Ali.Store.App.testHelpers.GivenHelper.givenHelper;
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_USER;
 import static java.util.List.of;
+import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -34,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class AuthenticationControllerTest {
 
+    private static final String DEVICE_UUID_HEADER_NAME = "X-Device-UUID";
     @Autowired
     private AuthenticationService service;
     @Autowired
@@ -41,34 +47,34 @@ public class AuthenticationControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private JwtAuthResponse jwtResponse;
-    private String fakeRefreshToken;
-    private String deviceId;
+    private AuthResponse jwtResponse;
+    private UUID fakeRefreshToken;
+    private UUID deviceUuid;
 
     @BeforeEach
     void setUp() {
         String fakeAccessToken = "fake.access.token";
-        fakeRefreshToken = "fake.refresh.token";
-        deviceId = "fake.device.id";
+        fakeRefreshToken = randomUUID();
+        deviceUuid = randomUUID();
 
-        UserSummary userInformationDetails = UserSummary.builder()
+        UserSummary userSummary = UserSummary.builder()
                 .id(1L)
                 .username("09213467890")
                 .role(ROLE_USER.name())
                 .build();
 
-        jwtResponse = JwtAuthResponse.builder()
+        jwtResponse = AuthResponse.builder()
                 .accessToken(fakeAccessToken)
                 .refreshToken(fakeRefreshToken)
-                .userResponse(userInformationDetails)
+                .userResponse(userSummary)
                 .build();
     }
 
     @Test
     void shouldCreateUser_whenDoesNotExist() throws Exception {
-        final UserRequest registerUserRequest = createUserRequest();
+        final RegisterUserRequest registerUserRequest = createUserRequest();
 
-        givenHelper(() -> service.saveUser(any(UserRequest.class)), jwtResponse);
+        givenHelper(() -> service.saveUser(any(RegisterUserRequest.class), anyString()), jwtResponse);
 
         mockMvc.perform(post("/auth/register")
                         .header("User-Agent", "PostmanRuntime-acer315-55kg")
@@ -81,12 +87,13 @@ public class AuthenticationControllerTest {
 
     @Test
     void shouldLoginUser_whenUsernameAndPasswordBeValid() throws Exception {
-        final UserRequest loginRequest = createUserRequest();
+        final RegisterUserRequest loginRequest = createUserRequest();
 
-        givenHelper(() -> service.login(any(UserRequest.class), anyString()), jwtResponse);
+        givenHelper(() -> service.login(any(LoginUserRequest.class), any(UUID.class)), jwtResponse);
 
         mockMvc.perform(post("/auth/login")
                         .header("User-Agent", "PostmanRuntime-acer315-55kg")
+                        .header(DEVICE_UUID_HEADER_NAME, deviceUuid)
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isCreated())
@@ -95,12 +102,14 @@ public class AuthenticationControllerTest {
     }
 
     @Test
-    void shouldCreateAccessToken_whenRefreshTokenBeValid() throws Exception {
-        final RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(fakeRefreshToken, deviceId);
+    void shouldCreateAccessToken_whenRefreshTokenAndDeviceUuidBeValid() throws Exception {
+        final String refreshTokenString = fakeRefreshToken.toString();
+        final RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(refreshTokenString);
 
-        givenHelper(() -> service.createNewAccessToken(any(RefreshTokenRequest.class)), jwtResponse);
+        givenHelper(() -> service.createNewAccessToken(any(UUID.class), any(RefreshTokenRequest.class)), jwtResponse);
 
         mockMvc.perform(post("/auth/access/token")
+                        .header(DEVICE_UUID_HEADER_NAME, deviceUuid)
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
                 .andExpect(jsonPath("$['Refresh Token']").exists())
@@ -116,18 +125,18 @@ public class AuthenticationControllerTest {
                 .authorities(of(new SimpleGrantedAuthority(ROLE_USER.name())))
                 .build();
 
-        willDoNothing().given(service).logout(anyLong());
+        willDoNothing().given(service).logout(any(LogoutRequest.class));
 
         mockMvc.perform(delete("/auth/refresh-token")
-                        .with(user(userDetails)))
+                        .with(user(userDetails))
+                        .header(DEVICE_UUID_HEADER_NAME, deviceUuid))
                 .andExpect(status().isNoContent());
     }
 
-    private UserRequest createUserRequest() {
-        return UserRequest.builder()
+    private RegisterUserRequest createUserRequest() {
+        return RegisterUserRequest.builder()
                 .username("09123467890")
                 .password("Fake.password.123")
-                .deviceId("fake.device.id")
                 .build();
     }
 }

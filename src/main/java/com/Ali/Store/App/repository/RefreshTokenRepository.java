@@ -1,7 +1,6 @@
 package com.Ali.Store.App.repository;
 
 import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
-import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,16 +9,26 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-    Optional<RefreshToken> findByTokenAndDeviceId(String token, String deviceId);
-    Optional<RefreshToken> findByDeviceId(String deviceId);
-
-    Optional<RefreshToken> findByUserIdAndDeviceId(Long userId, String deviceId);
+    @Query("""
+            SELECT rt
+            FROM RefreshToken rt
+            WHERE rt.device.deviceUuid = :deviceUuid
+            """)
+    Optional<RefreshToken> findByDeviceUUid(UUID deviceUuid);
 
     @Modifying
-    void deleteByUser(Users users);
+    @Query("""
+            DELETE FROM RefreshToken rt
+            WHERE rt.device.deviceUuid in (
+                SELECT d.deviceUuid
+                FROM Device d
+                WHERE d.deviceUuid = :deviceUuid AND d.user.id = :userId)
+            """)
+    void deleteByUserIdAndDeviceUuid(@Param("userId") Long userId, @Param("deviceUuid") UUID deviceUuid);
 
     @Modifying
     @Query("""

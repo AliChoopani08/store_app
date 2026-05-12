@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static java.util.Collections.singleton;
 
@@ -17,11 +18,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository repositoryUser;
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         final Users foundUser = repositoryUser.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("This username doesn't exist in database !"));
 
-        return new UserDetailsImpl(foundUser.getUsername(), foundUser.getPassword(),
-                singleton(new SimpleGrantedAuthority(foundUser.getRole().name())), foundUser.getId(), foundUser.getProfile());
+        return UserDetailsImpl.builder()
+                .username(foundUser.getUsername())
+                .password(foundUser.getPassword())
+                .authorities(singleton(new SimpleGrantedAuthority(foundUser.getRole().name())))
+                .id(foundUser.getId())
+                .profileUser(foundUser.getProfile())
+                .build();
     }
 }

@@ -68,7 +68,6 @@ public class OrderItemRepositoryTest {
 
 
         final List<OrderItemDetailsDto> userOrderItemsDetails = repositoryOrderItems.findUserOrderItemsDetails(userId, order.getId());
-        System.out.println(userOrderItemsDetails + "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp");
         assertThat(userOrderItemsDetails)
                 .extracting(OrderItemDetailsDto::productName, OrderItemDetailsDto::quantity, o -> o.productPrice().intValue())
                 .containsExactly(tuple("Fish Stew With Rice", 3, 9000));

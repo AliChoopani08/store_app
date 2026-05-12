@@ -21,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static java.time.LocalDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +83,32 @@ public class CartItemsRepositoryTest {
 
     }
 
+    @Test
+    void shouldFindCartItemsOfCartOfUser_whenExist() {
+        final Long userId = savedUser.getId();
+        final Product firstProduct = repositoryProduct.findAll().getFirst();
+        final Cart cart = addAndSaveCartItems(userId, getDefaultCartItems());
+
+        final Optional<CartItem> foundItemByProductAndCart = repositoryCartItems.findByCartAndProduct(cart.getId(), firstProduct.getId());
+
+        foundItemByProductAndCart.ifPresent(i -> assertThat(i)
+                .extracting(c -> c.getProduct().getName())
+                .isEqualTo("Fish Stew With Rice"));
+            }
+
+    @Test
+    void shouldDeleteAllByCartId_whenItemsExist() {
+        final Long userId = savedUser.getId();
+        final Cart cart = addAndSaveCartItems(userId, getDefaultCartItems());
+
+        repositoryCartItems.deleteByCartId(cart.getId());
+        final List<CartItem> foundByCartId = repositoryCartItems.findByCartId(cart.getId());
+
+        assertThat(foundByCartId)
+                .isEmpty();
+
+    }
+
     private Product createProducts() {
         return Product.builder()
                 .name("Fish Stew With Rice")
@@ -108,11 +135,11 @@ public class CartItemsRepositoryTest {
                 .build();
     }
 
-    private void addAndSaveCartItems(Long userId, CartItem item) {
+    private Cart addAndSaveCartItems(Long userId, CartItem item) {
         final Cart cart = getCartByUserId(userId);
 
         cart.addItems(item);
-        repositoryCart.save(cart);
+        return repositoryCart.save(cart);
     }
 
     private Cart getCartByUserId(Long userId) {

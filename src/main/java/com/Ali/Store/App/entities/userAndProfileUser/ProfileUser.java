@@ -32,13 +32,6 @@ public class ProfileUser {
     @JsonIgnore
     private Users user;
 
-    public ProfileUser(String firstName,String phoneNumber, String email, LocalDate birthData) {
-        this.name = firstName;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.birthData = birthData;
-    }
-
     public void setUsernameOnCorrectFields(Users user) {
         if (user.getUsername().startsWith("09")) {
             this.phoneNumber = user.getUsername();

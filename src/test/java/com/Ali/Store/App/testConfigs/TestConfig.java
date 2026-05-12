@@ -1,19 +1,16 @@
-package com.Ali.Store.App;
+package com.Ali.Store.App.testConfigs;
 
+import com.Ali.Store.App.DeviceHeaderInterceptor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@Configuration
-@EnableScheduling
-@EnableJpaAuditing // Automatic activation based on the user's creation and modification date
-@Profile("!test")
+@TestConfiguration
+@EnableJpaAuditing
 @RequiredArgsConstructor
-public class AppConfig implements WebMvcConfigurer {
+public class TestConfig implements WebMvcConfigurer {
 
     private final DeviceHeaderInterceptor deviceHeaderInterceptor;
 

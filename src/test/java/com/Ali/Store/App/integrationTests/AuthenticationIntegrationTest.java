@@ -3,9 +3,9 @@ package com.Ali.Store.App.integrationTests;
 import com.Ali.Store.App.dto.user.request.ChangeUsernameRequest;
 import com.Ali.Store.App.dto.user.request.PasswordResetRequest;
 import com.Ali.Store.App.dto.user.request.PasswordVerifyRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,17 +15,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+
+import java.util.UUID;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 class AuthenticationIntegrationTest {
 
     @Autowired
@@ -37,17 +39,18 @@ class AuthenticationIntegrationTest {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String AUTHORIZATION = "Authorization";
+    private static final String X_DEVICE_UUID = "X-Device-UUID";
     private String accessToken;
-    private UserRequest userRequest;
+    private UUID deviceUuid;
+    private RegisterUserRequest userRequest;
 
     @BeforeEach
     void registering_some_users() throws Exception {
         repositoryUser.deleteAll();
 
-        userRequest = UserRequest.builder()
+        userRequest = RegisterUserRequest.builder()
                 .username("09876543210")
                 .password("Mohammad12ch")
-                .deviceId("Android-Iphone-13-pro")
                 .build();
 
         final String registerResponse = createUserAndAccessToken(userRequest);
@@ -55,10 +58,14 @@ class AuthenticationIntegrationTest {
         accessToken = objectMapper.readTree(registerResponse)
                 .get("Access Token")
                 .asText();
+
+        deviceUuid = UUID.fromString(objectMapper.readTree(registerResponse)
+                .get("device UUID")
+                .asText());
     }
 
     @Test
-    void shouldChangeUsername_whenUserHadLoggedIn() throws Exception {
+    void shouldChangeUsername_whenUserHasLoggedIn() throws Exception {
         final ChangeUsernameRequest req = new ChangeUsernameRequest("chopaniali373@gmail.com");
 
         mockMvc.perform(patch("/auth/me/username")
@@ -109,13 +116,15 @@ class AuthenticationIntegrationTest {
     @Test
     void shouldLogoutUser_whenUserLoggedIn() throws Exception {
         mockMvc.perform(delete("/auth/refresh-token")
-                        .header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+                        .header(AUTHORIZATION, BEARER_PREFIX + accessToken)
+                        .header(X_DEVICE_UUID, deviceUuid))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void shouldThrowException_whenUserHasAnActiveRefreshTokenAndWantsToCreateAnotherOne() throws Exception {
         mockMvc.perform(post("/auth/login")
+                        .header(X_DEVICE_UUID, deviceUuid)
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequest)))
                 .andExpect(status().isConflict())
@@ -123,7 +132,7 @@ class AuthenticationIntegrationTest {
     }
 
 
-    private String createUserAndAccessToken(UserRequest registerReq) throws Exception {
+    private String createUserAndAccessToken(RegisterUserRequest registerReq) throws Exception {
         return mockMvc.perform(post("/auth/register")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerReq)))

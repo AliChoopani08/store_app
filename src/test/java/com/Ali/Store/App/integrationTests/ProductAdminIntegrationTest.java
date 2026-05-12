@@ -7,7 +7,7 @@ import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import com.Ali.Store.App.repository.productAndCategory.ProductRepository;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestInstance(PER_CLASS)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 @Transactional
 public class ProductAdminIntegrationTest {
 

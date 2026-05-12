@@ -73,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
         currentUser.addOrder(order);
 
         final Orders savedOrder = repositoryOrder.save(order);
-        repositoryCartItems.deleteAllByCartId(currentUser.getCart().getId());
+        repositoryCartItems.deleteByCartId(cart.getId());
 
 
         final List<OrderItemDetailsDto> orderItemsDetails = repositoryOrderItems.findUserOrderItemsDetails(currentUser.getId(), savedOrder.getId());

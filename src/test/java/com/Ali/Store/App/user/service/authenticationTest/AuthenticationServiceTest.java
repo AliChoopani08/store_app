@@ -2,18 +2,16 @@ package com.Ali.Store.App.user.service.authenticationTest;
 
 import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.*;
-import com.Ali.Store.App.dto.user.request.ChangeUsernameRequest;
-import com.Ali.Store.App.dto.user.request.PasswordResetRequest;
-import com.Ali.Store.App.dto.user.request.PasswordVerifyRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.ProfileSummary;
 import com.Ali.Store.App.dto.user.response.UserSummary;
+import com.Ali.Store.App.entities.userAndProfileUser.Device;
 import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticationToken;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
 import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
@@ -31,11 +29,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.Ali.Store.App.testHelpers.WhenHelper.whenHelper;
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_USER;
 import static java.util.List.of;
 import static java.util.Optional.empty;
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -62,9 +62,10 @@ public class AuthenticationServiceTest {
     @InjectMocks
     AuthenticationServiceImpl service;
 
-    private UserRequest userRequest;
+    private RegisterUserRequest userRequest;
     private Users user;
-    private JwtAuthResponse authTokenResponse;
+    private Device device;
+    private AuthResponse authTokenResponse;
     private RefreshToken refreshToken;
     private UserSummary userResponse;
 
@@ -72,6 +73,15 @@ public class AuthenticationServiceTest {
     void setUp() {
         userRequest = createUserRequest();
         user = createUser();
+        device = Device.builder()
+                .deviceUuid(randomUUID())
+                .deviceInfo("acer-315-55kg")
+                .isAvailable(true)
+                .build();
+        user.addDevice(device);
+
+        refreshToken = createRefreshToken();
+        device.addRefreshToken(refreshToken);
 
         ProfileSummary profileSummary = ProfileSummary.builder()
                 .id(1L)
@@ -84,7 +94,6 @@ public class AuthenticationServiceTest {
                 .profileSummary(profileSummary)
                 .build();
 
-        refreshToken = createRefreshToken();
         authTokenResponse = createAuthJwtAuthResponse(refreshToken.getToken(), userResponse);
     }
 
@@ -92,40 +101,43 @@ public class AuthenticationServiceTest {
     void shouldCreateUser_whenUserDoesNotExist() {
         final String fakeEncodedPassword = "fake.encoded.password";
 
-        whenHelper(userMapper.toEntity(any(UserRequest.class)), user);
-        whenHelper(passwordEncoder.encode(anyString()), fakeEncodedPassword);
+        whenHelper(userMapper.toEntity(any(RegisterUserRequest.class)), user);
         whenHelper(repository.findByUsername(anyString()), empty());
-        whenHelper(repositoryRefreshToken.findByDeviceId(anyString()), empty());
+        whenHelper(passwordEncoder.encode(anyString()), fakeEncodedPassword);
         whenHelper(repository.save(any(Users.class)), user);
-        whenHelper(refreshTokenService.createRefreshToken(any(Users.class), anyString(), anyString()), refreshToken);
+        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class)), refreshToken);
         whenHelper(jwtAuthService.generateAccessToken(anyString()), authTokenResponse.getAccessToken());
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
-        final JwtAuthResponse savedUser = service.saveUser(userRequest);
+        final AuthResponse savedUser = service.saveUser(userRequest,"fake.device.info");
 
         assertThat(savedUser)
-                .extracting(JwtAuthResponse::getAccessToken, j -> j.getUserResponse().profileSummary().phoneNumber())
+                .extracting(AuthResponse::getAccessToken, j -> j.getUserResponse().profileSummary().phoneNumber())
                 .containsExactly("fake.access.token", "09876543210");
     }
 
     @Test
-    void shouldLoginUser_whenUsernameAndPasswordAndDeviceIdBeValid() {
-        final String deviceId = "fake.device.id.123";
+    void shouldLoginUser_whenUsernameAndPasswordAndDeviceUuidBeValid() {
+        final UUID deviceUuid = device.getDeviceUuid();
+        LoginUserRequest loginReq = LoginUserRequest.builder()
+                .username("09876543210")
+                .password("Fake.password.123")
+                .build();
         final UserDetailsImpl userDetails = createUserDetails();
-        Authentication fakeAuth = createFakeAuthentication(userDetails);
+        Authentication fakeAuth = createFakeAuthentication(userDetails, deviceUuid);
         
         whenHelper(authenticationManager.authenticate(any(Authentication.class)), fakeAuth);
         when(userMapper.userDetailsImplToUsers(eq((UserDetailsImpl) fakeAuth.getPrincipal())))
                 .thenReturn(user);
         whenHelper(jwtAuthService.generateAccessToken(anyString()), authTokenResponse.getAccessToken());
-        whenHelper(refreshTokenService.createRefreshToken(any(Users.class), anyString(), anyString()), refreshToken);
+        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class)), refreshToken);
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
-        final JwtAuthResponse loggedIn = service.login(userRequest, deviceId);
+        final AuthResponse loggedIn = service.login(loginReq, deviceUuid);
 
         assertThat(loggedIn)
-                .extracting(JwtAuthResponse::getAccessToken, j -> j.getUserResponse().username())
-                .containsExactly("fake.access.token", "09876543210");
+                .extracting(AuthResponse::getAccessToken, j -> j.getUserResponse().username(), AuthResponse::getDeviceUuid)
+                .containsExactly("fake.access.token", "09876543210", deviceUuid);
     }
 
     private static UserDetailsImpl createUserDetails() {
@@ -136,11 +148,11 @@ public class AuthenticationServiceTest {
                 .build();
     }
 
-    private static CustomAuthenticationToken createFakeAuthentication(UserDetailsImpl userDetails) {
+    private static CustomAuthenticationToken createFakeAuthentication(UserDetailsImpl userDetails, UUID deviceUuid) {
         return new CustomAuthenticationToken(userDetails,
                 empty(),
                 userDetails.getAuthorities(),
-                "fake.device.id.123");
+                deviceUuid);
     }
 
     @Test
@@ -209,12 +221,11 @@ public class AuthenticationServiceTest {
     private static RefreshToken createRefreshToken() {
         return RefreshToken.builder()
                 .id(2L)
-                .token("fake.refresh.token")
-                .deviceId("fake.device.id.123")
+                .token(randomUUID())
                 .build();
     }
-    private static JwtAuthResponse createAuthJwtAuthResponse(String refreshToken, UserSummary response) {
-        return JwtAuthResponse.builder()
+    private static AuthResponse createAuthJwtAuthResponse(UUID refreshToken, UserSummary response) {
+        return AuthResponse.builder()
                 .accessToken("fake.access.token")
                 .refreshToken(refreshToken)
                 .userResponse(response)
@@ -226,13 +237,13 @@ public class AuthenticationServiceTest {
                 .username("09876543210")
                 .password("Fake.password.123")
                 .role(ROLE_USER)
+                .status(true)
                 .build();
     }
-    private static UserRequest createUserRequest() {
-        return UserRequest.builder()
+    private static RegisterUserRequest createUserRequest() {
+        return RegisterUserRequest.builder()
                 .username("09876543210")
                 .password("Fake.password.123")
-                .deviceId("fake.device.id.123")
                 .build();
     }
 }

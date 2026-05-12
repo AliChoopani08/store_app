@@ -19,6 +19,7 @@ import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.service.product.ItemStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -62,6 +63,7 @@ import static com.Ali.Store.App.service.product.ItemStatus.INCREASED;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CartServiceImpl implements CartService {
 
     private final UserRepository repositoryUser;
@@ -83,6 +85,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Map<String, Object> addToCart(Long userId, AddToCartRequest cartRequest) {
+        log.info("Starting to add product to user's cart, user id [{}]", userId);
         Map<String, Object> responseMap = new HashMap<>();
         AtomicReference<ItemStatus> status = new AtomicReference<>();
         final Users currentUser = getCurrentUserObject(userId);
@@ -92,7 +95,7 @@ public class CartServiceImpl implements CartService {
 
         final Optional<Cart> foundUserCartOptional = repositoryCart.findByUserId(currentUser.getId());
 
-        final Cart OperationsOutcome = foundUserCartOptional.map(cart -> repositoryCartItems.findByProduct(foundProduct) // if cart user exists
+        final Cart OperationsOutcome = foundUserCartOptional.map(cart -> repositoryCartItems.findByCartAndProduct(cart.getId(), foundProduct.getId()) // if cart user exists
                         .map(item -> increaseItemQuantityIfExists(cartRequest.getQuantity(), item, foundProduct, status))
                         .orElseGet(() -> createNewItemIfDoesNotExist(cartRequest.getQuantity(), cart, foundProduct, status)))
 
@@ -159,6 +162,7 @@ public class CartServiceImpl implements CartService {
         foundProduct.setQuantity(foundProduct.getQuantity() - quantity);
         cart.addItems(item);
 
+        log.info("A new cart created successfully, User id [{}]", currentUser.getId());
         return cart;
     }
 
@@ -172,6 +176,7 @@ public class CartServiceImpl implements CartService {
         foundUserCart.addItems(item);
 
         status.set(CREATED);
+        log.info("A new cart item created successfully, cart id [{}]", foundUserCart.getId());
         return foundUserCart;
     }
 
@@ -181,6 +186,7 @@ public class CartServiceImpl implements CartService {
         foundProduct.setQuantity(foundProduct.getQuantity() - quantity);
 
         status.set(INCREASED);
+        log.info("Cart item quantity increased successfully, Item id [{}]", item.getId());
         return item.getCart();
     }
 

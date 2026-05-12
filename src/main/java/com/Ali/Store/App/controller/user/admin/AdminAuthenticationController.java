@@ -3,7 +3,7 @@ package com.Ali.Store.App.controller.user.admin;
 
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.user.request.CreateAdminRequest;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.service.user.authentication.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,10 +30,10 @@ public class AdminAuthenticationController {
             summary = "Create Another Admin",
             description = "Just an admin who has logged in can register another admin"
     )
-    public ResponseEntity<ApiResponse<JwtAuthResponse>> createAdminAccount(@RequestBody @Valid CreateAdminRequest createAdminRequest, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> createAdminAccount(@RequestBody @Valid CreateAdminRequest createAdminRequest, HttpServletRequest request) {
         final String deviceId = request.getHeader("User-Agent");
 
-        final JwtAuthResponse jwtResponse = service.saveAdmin(createAdminRequest, deviceId);
+        final AuthResponse jwtResponse = service.saveAdmin(createAdminRequest, deviceId);
 
         return status(CREATED)
                 .body(new ApiResponse<>(201, "A new admin person registered successfully.", jwtResponse));

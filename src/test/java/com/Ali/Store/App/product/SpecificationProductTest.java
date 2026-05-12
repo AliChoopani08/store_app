@@ -7,7 +7,7 @@ import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import com.Ali.Store.App.repository.productAndCategory.ProductRepository;
 import com.Ali.Store.App.service.product.ProductServiceImpl;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ import static org.springframework.data.domain.PageRequest.of;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 public class SpecificationProductTest {
 
     @Autowired

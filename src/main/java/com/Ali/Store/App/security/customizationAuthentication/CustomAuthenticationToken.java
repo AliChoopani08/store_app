@@ -5,33 +5,34 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @Getter
 public class CustomAuthenticationToken extends UsernamePasswordAuthenticationToken {
 
-    private final String deviceId;
+    private final UUID deviceUuid;
 
     /**
      * For Unauthenticated Stage
      */
     public CustomAuthenticationToken(Object principal) {
         super(principal, null);
-        this.deviceId = null;
+        this.deviceUuid = null;
     }
 
     /**
      * For Login Stage
      */
-    public CustomAuthenticationToken(Object principal, Object credentials, String deviceId) {
+    public CustomAuthenticationToken(Object principal, Object credentials, UUID deviceUuid) {
         super(principal, credentials);
-        this.deviceId = deviceId;
+        this.deviceUuid = deviceUuid;
     }
 
     /**
      * For Authentication Stage
      */
-    public CustomAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities, String deviceId) {
+    public CustomAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities, UUID deviceUuid) {
         super(principal, credentials, authorities);
-        this.deviceId = deviceId;
+        this.deviceUuid = deviceUuid;
     }
 }

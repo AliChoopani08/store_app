@@ -21,14 +21,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import static com.Ali.Store.App.testHelpers.WhenHelper.whenHelper;
 import static com.Ali.Store.App.service.product.ItemStatus.CREATED;
-import static java.util.List.of;
 import static java.util.Optional.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @ExtendWith(MockitoExtension.class)
 public class ServiceAddTpCartTest {
@@ -83,15 +83,15 @@ public class ServiceAddTpCartTest {
         final CartItemDto expectedCartItemDto = getCartItemDto();
         UserCartDetailsDto expectedUserCartDetails = UserCartDetailsDto.builder()
                 .userid(fakeUser.getId())
-                .cartItemsDto(of(expectedCartItemDto))
+                .cartItemsDto(List.of(expectedCartItemDto))
                 .build();
 
-        whenHelper(repositoryUser.findById(any(Long.class)), Optional.of(fakeUser));
-        whenHelper(repositoryProduct.findById(any(Long.class)), Optional.of(product));
-        whenHelper(repositoryCart.findByUserId(any(Long.class)), Optional.of(cart));
-        whenHelper(repositoryCartItems.findByProduct(any(Product.class)), empty()); // Assume this product doesn't exist in the cart
+        whenHelper(repositoryUser.findById(anyLong()), of(fakeUser));
+        whenHelper(repositoryProduct.findById(anyLong()), of(product));
+        whenHelper(repositoryCart.findByUserId(anyLong()), of(cart));
+        whenHelper(repositoryCartItems.findByCartAndProduct(anyLong(), anyLong()), empty()); // Assume this product doesn't exist in the cart
         whenHelper(repositoryCart.save(any(Cart.class)), cart);
-        whenHelper(repositoryCartItems.findUserCartItemsDetails(any(Long.class)), of(expectedCartItemDto));
+        whenHelper(repositoryCartItems.findUserCartItemsDetails(anyLong()), List.of(expectedCartItemDto));
 
         final Map<String, Object> savedCart = serviceCart.addToCart(fakeUser.getId(), orderItemsRequest);
 

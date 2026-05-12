@@ -1,9 +1,9 @@
 package com.Ali.Store.App.integrationTests;
 
 import com.Ali.Store.App.dto.user.request.ProfileRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 public class ManagementProfileIntegrationTest {
 
     @Autowired
@@ -39,10 +39,9 @@ public class ManagementProfileIntegrationTest {
     void setUp() throws Exception {
         userRepository.deleteAll();
 
-        final UserRequest registerRequest = UserRequest.builder()
+        final RegisterUserRequest registerRequest = RegisterUserRequest.builder()
                 .username("09112223344")
                 .password("Password123")
-                .deviceId("acer315-55kg")
                 .build();
 
         final String registerResponseApi = mockMvc.perform(post("/auth/register")

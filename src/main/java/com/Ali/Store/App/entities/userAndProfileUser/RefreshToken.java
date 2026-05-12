@@ -3,6 +3,7 @@ package com.Ali.Store.App.entities.userAndProfileUser;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
+import java.util.UUID;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -18,21 +19,11 @@ public class RefreshToken {
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
-    @Column(nullable = false)
-    private String token;
-    @Column(nullable = false, length = 500, unique = true)
-    private String deviceId;
-    private String deviceInfo;
+    @Column(nullable = false, updatable = false)
+    private UUID token;
     private Instant expiryDate;
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private Users user;
 
-    public RefreshToken(Long id, String token, String deviceId, String deviceInfo, Instant expiryDate) {
-        this.id = id;
-        this.token = token;
-        this.deviceId = deviceId;
-        this.deviceInfo = deviceInfo;
-        this.expiryDate = expiryDate;
-    }
+    @OneToOne
+    @JoinColumn(name = "device_id")
+    private Device device;
 }

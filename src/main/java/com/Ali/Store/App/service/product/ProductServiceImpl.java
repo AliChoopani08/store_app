@@ -149,6 +149,7 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductSummary updateProductQuantity(int requestedQuantity, Product existingProduct) {
         existingProduct.setQuantity(existingProduct.getQuantity() + requestedQuantity);
+        existingProduct.setAvailable(existingProduct.getQuantity() > 0);
 
         final Product savedProduct = repositoryProduct.save(existingProduct);
 

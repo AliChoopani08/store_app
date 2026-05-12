@@ -4,6 +4,6 @@ import org.springframework.security.core.AuthenticationException;
 
 public class DeviceNotAllowedException extends AuthenticationException {
     public DeviceNotAllowedException(String deviceId) {
-        super("This device [" + deviceId + "] is not exist !");
+        super("This device [" + deviceId + "] is not exist  or it is blocked !");
     }
 }

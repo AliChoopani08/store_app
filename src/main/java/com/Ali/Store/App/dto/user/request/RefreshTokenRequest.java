@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @AllArgsConstructor
 @Getter
 @Setter
@@ -18,9 +20,4 @@ public class RefreshTokenRequest {
     @Schema(description = "The token saved in database of refresh token")
     @JsonProperty("Refresh Token")
     private String token;
-
-    @NotBlank(message = "Device Id is empty !")
-    @Size(min = 10, max = 500, message = "Device Id must be between 1 until 500 character !")
-    @Schema(description = "Unique identification for each device of user -> (It must be made randomly by Front End)")
-    private String deviceId;
 }

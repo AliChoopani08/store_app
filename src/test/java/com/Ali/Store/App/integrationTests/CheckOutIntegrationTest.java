@@ -1,13 +1,13 @@
 package com.Ali.Store.App.integrationTests;
 
 import com.Ali.Store.App.dto.checkout.request.AddToCartRequest;
-import com.Ali.Store.App.dto.user.request.UserRequest;
+import com.Ali.Store.App.dto.user.request.RegisterUserRequest;
 import com.Ali.Store.App.entities.productAndCategory.Category;
 import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import com.Ali.Store.App.repository.productAndCategory.ProductRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 public class CheckOutIntegrationTest {
 
     private static final String AUTHORIZATION = "Authorization";
@@ -69,7 +69,7 @@ public class CheckOutIntegrationTest {
         repositoryUser.deleteAll();
         repositoryCategory.deleteAll();
 
-        final UserRequest userRequest = createUserRequest();
+        final RegisterUserRequest userRequest = createUserRequest();
         final String registerResponse = createUserAndAccessToken(userRequest);
         jwt = objectMapper.readTree(registerResponse)
                 .get("Access Token")
@@ -126,15 +126,14 @@ public class CheckOutIntegrationTest {
                 .andExpect(jsonPath("$.data.['Total prices']").value(new BigDecimal("6000.0")));
     }
 
-    private static UserRequest createUserRequest() {
-        return UserRequest.builder()
+    private static RegisterUserRequest createUserRequest() {
+        return RegisterUserRequest.builder()
                 .username("09876543210")
                 .password("Password123")
-                .deviceId("acer-315-55kg")
                 .build();
     }
 
-    private String createUserAndAccessToken(UserRequest req) throws Exception {
+    private String createUserAndAccessToken(RegisterUserRequest req) throws Exception {
         return mockMvc.perform(post("/auth/register")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))

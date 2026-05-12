@@ -10,7 +10,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.LAZY;
@@ -42,37 +44,20 @@ public class Users {
     orphanRemoval = true)
     private ProfileUser profile;
 
-    @OneToMany(mappedBy = "user", fetch = LAZY, cascade = ALL)
-    private List<RefreshToken> refreshTokens = new ArrayList<>();
-
     @OneToOne(mappedBy = "user", cascade = ALL, orphanRemoval = true)
     private Cart cart;
 
     @OneToMany(mappedBy = "user", cascade = ALL, fetch = LAZY)
    private List<Orders> orders = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = ALL, fetch = LAZY)
+    private Set<Device> devices = new HashSet<>();
+
     @CreatedDate
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
+
     private boolean status;
-
-
-    public Users(String username, String password) { // for SingUp
-        this.username = username;
-        this.password = password;
-    }
-
-    public Users(String username, String password,Role role) {
-        this.username = username;
-        this.password = password;
-        this.role = role;
-    }
-
-    public Users(Long id, String username, Role role) {
-        this.id = id;
-        this.username = username;
-        this.role = role;
-    }
 
     public void setProfileFields(ProfileUser profile) {
         profile.setUsernameOnCorrectFields(this);
@@ -93,12 +78,12 @@ public class Users {
         cart.setUser(this);
     }
 
-    public void addRefreshToken(RefreshToken refreshToken) {
-        if (this.getRefreshTokens() == null) {
-            this.refreshTokens = new ArrayList<>();
+    public void addDevice(Device device) {
+        if (this.devices == null) {
+            this.devices = new HashSet<>();
         }
-        this.getRefreshTokens().add(refreshToken);
-        refreshToken.setUser(this);
+        this.getDevices().add(device);
+        device.setUser(this);
     }
 
 

@@ -4,7 +4,7 @@ import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.UserSummary;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -35,10 +37,10 @@ public class AuthenticationController {
             summary = "User registration",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtAuthResponse> registerUser(@RequestBody @Valid UserRequest userRequest, HttpServletRequest request) {
+    public ResponseEntity<AuthResponse> registerUser(@RequestBody @Valid RegisterUserRequest userRequest, HttpServletRequest request) {
         final String deviceInfo = request.getHeader("User-Agent");
 
-        final JwtAuthResponse savedUserToken = service.saveUser(userRequest);
+        final AuthResponse savedUserToken = service.saveUser(userRequest, deviceInfo);
 
         return status(CREATED)
                 .body(savedUserToken);
@@ -49,10 +51,9 @@ public class AuthenticationController {
             summary = "User logon",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtAuthResponse> loginWithUsername(@RequestBody UserRequest userRequest, HttpServletRequest request) {
-        final String deviceInfo = request.getHeader("User-Agent");
+    public ResponseEntity<AuthResponse> login(@RequestHeader(name = "X-Device-UUID") UUID deviceUuid, @RequestBody LoginUserRequest loginRequest) {
 
-        final JwtAuthResponse loggedInUserToken = service.login(userRequest, deviceInfo);
+        final AuthResponse loggedInUserToken = service.login(loginRequest, deviceUuid);
 
         return status(CREATED)
                 .body(loggedInUserToken);
@@ -64,8 +65,9 @@ public class AuthenticationController {
             description = "Reconstruction the expired access token with entered refresh token",
             security = {@SecurityRequirement(name = "")}
     )
-    public ResponseEntity<JwtAuthResponse> createNewAccessToken(@RequestBody @Valid RefreshTokenRequest tokenRequest) {
-        final JwtAuthResponse createdNewAccessToken = service.createNewAccessToken(tokenRequest);
+    public ResponseEntity<AuthResponse> createNewAccessToken(@RequestHeader(name = "X-Device-UUID") UUID deviceUuid,
+                                                             @RequestBody @Valid RefreshTokenRequest tokenRequest) {
+        final AuthResponse createdNewAccessToken = service.createNewAccessToken(deviceUuid, tokenRequest);
 
         return status(CREATED)
                 .body(createdNewAccessToken);
@@ -108,8 +110,9 @@ public class AuthenticationController {
     @Operation(
             summary = "Logout and delete the refresh token"
     )
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal UserDetailsImpl currentUser) {
-        service.logout(currentUser.getId());
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal UserDetailsImpl currentUser,
+                                       @RequestHeader(name = "X-Device-UUID") UUID deviceUuid) {
+        service.logout(new LogoutRequest(currentUser.getId(), deviceUuid));
 
         return status(NO_CONTENT)
                 .build();

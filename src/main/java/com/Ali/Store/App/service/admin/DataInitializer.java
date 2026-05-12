@@ -15,7 +15,7 @@ import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_ADMIN;
 @Configuration
 public class DataInitializer {
 
-    @Bean
+    /*@Bean
     public CommandLineRunner init(UserRepository repository, PasswordEncoder passwordEncoder, JwtAuthServiceInterface jwtService, RefreshTokenServiceInterface refreshTokenService) {
         return __ -> {
             if (repository.count() == 0) {
@@ -28,7 +28,7 @@ public class DataInitializer {
 
                 final Users savedUser = repository.save(admin);
 
-                final RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser, "acer315-55kg", "Windows-Acer-Computer");
+                final RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser);
 
                 final String accessToken = jwtService.generateAccessToken(savedUser.getUsername());
 
@@ -36,5 +36,5 @@ public class DataInitializer {
                 System.out.println("This your refresh token Ali ( " + refreshToken + " );");
             }
         };
-    }
+    }*/
 }

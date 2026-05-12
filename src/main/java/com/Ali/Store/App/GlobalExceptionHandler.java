@@ -8,6 +8,8 @@ import com.Ali.Store.App.exceptions.security.JwtPasswordExpiredException;
 import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.exceptions.security.PasswordVerifyTokenExceptions;
+import com.Ali.Store.App.exceptions.user.DuplicateRefreshToken;
+import com.Ali.Store.App.exceptions.user.DuplicateUsername;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,7 +77,7 @@ public class GlobalExceptionHandler {
 
     // Invalid Parameter
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ResponseError> invalidParameterHandlre(HttpServletRequest request) {
+    public ResponseEntity<ResponseError> invalidParameterHandler(HttpServletRequest request) {
 
         return getResponseError(BAD_REQUEST, "Invalid Parameter", "Entrance parameter is invalid ! Please try again...", request);
     }
@@ -141,6 +143,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PasswordVerifyTokenExceptions.class)
     public ResponseEntity<ResponseError> passwordVerifyTokenHandle(HttpServletRequest request, PasswordVerifyTokenExceptions ex) {
         return getResponseError(BAD_REQUEST, "Invalid Token" , ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateRefreshToken.class)
+    public ResponseEntity<ResponseError> duplicateRefreshTokenHandler(HttpServletRequest request, DuplicateRefreshToken ex) {
+        return  getResponseError(CONFLICT, "Duplicate Refresh Token", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateUsername.class)
+    public ResponseEntity<ResponseError> duplicateUsernameHandler(HttpServletRequest request, DuplicateUsername ex) {
+        return getResponseError(CONFLICT, "Duplicate Username", ex.getMessage(), request);
     }
 
 

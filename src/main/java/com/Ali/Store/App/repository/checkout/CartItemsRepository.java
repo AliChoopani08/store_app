@@ -2,17 +2,25 @@ package com.Ali.Store.App.repository.checkout;
 
 import com.Ali.Store.App.dto.checkout.response.CartItemDto;
 import com.Ali.Store.App.entities.checkout.CartItem;
-import com.Ali.Store.App.entities.productAndCategory.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface CartItemsRepository extends JpaRepository<CartItem, Long> {
-    Optional<CartItem> findByProduct(Product product);
+    @Query("""
+            SELECT ci
+            FROM CartItem ci
+            join ci.cart c
+            join ci.product p
+            WHERE  c.id = :cartId AND p.id = :productId
+            """)
+    Optional<CartItem> findByCartAndProduct(@Param("cartId") Long cartId, @Param("productId") Long productId);
 
     @Query("""
             SELECT new com.Ali.Store.App.dto.checkout.response.CartItemDto
@@ -26,6 +34,12 @@ public interface CartItemsRepository extends JpaRepository<CartItem, Long> {
             """)
     List<CartItemDto> findUserCartItemsDetails(@Param("userId") Long userId); // I only want CartItems, Not All Users and Its lazy objects
 
+    List<CartItem> findByCartId(@Param("cartId") Long cartId);
 
-    void deleteAllByCartId(Long cartId);
+    @Modifying
+    @Query("""
+            DELETE FROM CartItem ci
+            WHERE ci.cart.id = :cartId
+            """)
+    void deleteByCartId(Long cartId);
 }

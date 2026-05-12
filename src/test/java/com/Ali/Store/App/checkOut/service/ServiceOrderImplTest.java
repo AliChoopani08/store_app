@@ -8,8 +8,8 @@ import com.Ali.Store.App.entities.checkout.OrderItem;
 import com.Ali.Store.App.entities.checkout.Orders;
 import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
-import com.Ali.Store.App.repository.checkout.CartRepository;
 import com.Ali.Store.App.repository.checkout.CartItemsRepository;
+import com.Ali.Store.App.repository.checkout.CartRepository;
 import com.Ali.Store.App.repository.checkout.OrderRepository;
 import com.Ali.Store.App.repository.checkout.OrderItemsRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
@@ -42,7 +42,7 @@ public class ServiceOrderImplTest {
     @Mock
     private OrderItemsRepository repositoryOrderItems;
     @Mock
-    private CartItemsRepository repositoryCartItems;
+    private CartItemsRepository cartItemsRepository;
     @InjectMocks
     private OrderServiceImpl serviceOrder;
 
@@ -77,7 +77,7 @@ public class ServiceOrderImplTest {
     void shouldCreateOrder_whenUserAndCartExist() {
         OrderItemDetailsDto expectedOrderItemDetails = createExpectedOrderItemDetails();
 
-        whenHelper(repositoryCart.findByUserId(any(Long.class)), Optional.of(cart));
+        whenHelper(repositoryCart.findByUserId(anyLong()), Optional.of(cart));
         whenHelper(repositoryOrder.save(any(Orders.class)), order);
         whenHelper(repositoryOrderItems.findUserOrderItemsDetails(anyLong(), anyLong()), of(expectedOrderItemDetails));
 

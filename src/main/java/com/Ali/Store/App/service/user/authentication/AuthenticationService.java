@@ -3,16 +3,18 @@ package com.Ali.Store.App.service.user.authentication;
 import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.UserSummary;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
+
+import java.util.UUID;
 
 public interface AuthenticationService {
 
-    JwtAuthResponse saveUser(UserRequest userRequest);
-    JwtAuthResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo);
-    JwtAuthResponse login(UserRequest userRequest, String deviceInfo);
-    void logout(Long userId);
+    AuthResponse saveUser(RegisterUserRequest userRequest, String deviceInfo);
+    AuthResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo);
+    AuthResponse login(LoginUserRequest loginUserRequest, UUID deviceUuid);
+    void logout(LogoutRequest logoutRequest);
     UserSummary changeUsername(Long userId, ChangeUsernameRequest changeUsernameRequest);
     PwdVerifyJwtResponse passwordVerify(Long userId, PasswordVerifyRequest passwordVerifyRequest);
     UserSummary passwordReset(PasswordResetRequest passwordResetRequest);
-    JwtAuthResponse createNewAccessToken(RefreshTokenRequest refreshTokenRequest);
+    AuthResponse createNewAccessToken(UUID deviceUuid, RefreshTokenRequest refreshTokenRequest);
 }

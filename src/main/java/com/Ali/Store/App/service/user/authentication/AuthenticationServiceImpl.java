@@ -4,22 +4,17 @@ import com.Ali.Store.App.dto.security.PwdVerifyJwtResponse;
 import com.Ali.Store.App.dto.user.*;
 import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.UserSummary;
-import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
-import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
-import com.Ali.Store.App.entities.userAndProfileUser.Role;
-import com.Ali.Store.App.entities.userAndProfileUser.Users;
+import com.Ali.Store.App.entities.userAndProfileUser.*;
 import com.Ali.Store.App.exceptions.security.ExpiredRefreshToken;
-import com.Ali.Store.App.exceptions.DuplicateValueException;
+import com.Ali.Store.App.exceptions.user.DuplicateUsername;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
-import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticationToken;
-import com.Ali.Store.App.dto.security.JwtAuthResponse;
+import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
 import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,8 +22,13 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_USER;
+import static com.Ali.Store.App.entities.userAndProfileUser.Role.valueOf;
+import static java.util.UUID.randomUUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,48 +42,47 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtAuthServiceInterface jwtAuthService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenServiceInterface refreshTokenService;
-    private final RefreshTokenRepository repositoryRefreshToken;
     private final PasswordEncoder encoder;
     private final JwtPwdVerifyServiceInterface jwtPwdVerifyService;
 
 
     @Override
     @Transactional
-    public JwtAuthResponse saveUser(UserRequest userRequest) {
+    public AuthResponse saveUser(RegisterUserRequest userRequest, String deviceInfo) {
         final Users user = userMapper.toEntity(userRequest);
         user.setRole(ROLE_USER);
 
-        return helperForCommonCodesOfSavePerson(userRequest, user, userRequest.getDeviceId());
+        return helperForCommonCodesOfSavePerson(userRequest, user, deviceInfo);
     }
 
     @Override
     @Transactional
-    public JwtAuthResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo) {
+    public AuthResponse saveAdmin(CreateAdminRequest createAdminRequest, String deviceInfo) {
         final Users user = userMapper.createAdminRequestToUsers(createAdminRequest);
-        user.setRole(Role.valueOf(createAdminRequest.getRole()));
+        user.setRole(valueOf(createAdminRequest.getRole()));
 
         return helperForCommonCodesOfSavePerson(createAdminRequest, user, deviceInfo);
     }
 
     @Override
-    public JwtAuthResponse login(UserRequest userRequest, String deviceInfo) {
-        final Authentication authenticate = authenticationManager.authenticate(new CustomAuthenticationToken(userRequest.getUsername(), userRequest.getPassword(), userRequest.getDeviceId()));
+    public AuthResponse login(LoginUserRequest loginUserRequest, UUID deviceUuid) {
+        final Authentication authenticate = authenticationManager.authenticate(new CustomAuthenticationToken(loginUserRequest.getUsername(), loginUserRequest.getPassword(), deviceUuid));
 
         final UserDetailsImpl userDetails = (UserDetailsImpl) authenticate.getPrincipal();
         final Users user = userMapper.userDetailsImplToUsers(userDetails);
 
-        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, userRequest.getDeviceId(), deviceInfo);
+        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(deviceUuid);
         final String accessToken = jwtAuthService.generateAccessToken(user.getUsername());
         final UserSummary userResponse = userMapper.toSummary(user);
 
-        return new JwtAuthResponse(refreshToken.getToken(), accessToken, userResponse);
+        return new AuthResponse(refreshToken.getToken(), accessToken, userResponse, deviceUuid);
     }
 
 
     @Override
     @Transactional
-    public void logout(Long userId) {
-        refreshTokenService.deleteByUser(getCurrentUserById(userId));
+    public void logout(LogoutRequest logoutRequest) {
+        refreshTokenService.deleteByDeviceUuid(logoutRequest);
     }
 
     @Override
@@ -126,40 +125,47 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    @Transactional
-    public JwtAuthResponse createNewAccessToken(RefreshTokenRequest tokenRequest) {
-        if (!refreshTokenService.expiredRefreshToken(tokenRequest.getToken(), tokenRequest.getDeviceId())) {
-            final RefreshToken foundRefreshToken = refreshTokenService.getByTokenAndDeviceId(tokenRequest.getToken(), tokenRequest.getDeviceId());
-            final String createdAccessToken = jwtAuthService.generateAccessToken(foundRefreshToken.getUser().getUsername());
-            final UserSummary userResponse = userMapper.toSummary(foundRefreshToken.getUser());
-            return new JwtAuthResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse);
+    @Transactional(readOnly = true)
+    public AuthResponse createNewAccessToken(UUID deviceUuid, RefreshTokenRequest tokenRequest) {
+        if (!refreshTokenService.expiredRefreshToken(deviceUuid)) {
+            final RefreshToken foundRefreshToken = refreshTokenService.getByDeviceUuid(deviceUuid);
+            final Users user = foundRefreshToken.getDevice().getUser();
+
+            final String createdAccessToken = jwtAuthService.generateAccessToken(user.getUsername());
+            final UserSummary userResponse = userMapper.toSummary(user);
+            return new AuthResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse, deviceUuid);
         } else {
-            refreshTokenService.deleteExpiredUser(tokenRequest);
+            refreshTokenService.deleteExpiredRefreshTokenByDeviceUUid(deviceUuid);
             throw new ExpiredRefreshToken(tokenRequest.getToken());
         }
     }
 
     @Transactional
-    private <T extends CommonFieldsForSavePeople> JwtAuthResponse helperForCommonCodesOfSavePerson(T registerRequest, Users user, String deviceInfo) {
+    private <T extends CommonFieldsForSavePeople> AuthResponse helperForCommonCodesOfSavePerson(T registerRequest, Users user, String deviceInfo) {
+        repository.findByUsername(registerRequest.getUsername()).ifPresent(__ -> {
+            throw new DuplicateUsername(registerRequest.getUsername());
+        });
+
         final String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
+        Device device;
 
         user.setPassword(encodedPassword);
         user.setStatus(true);
         user.setProfileFields(ProfileUser.builder().build());
-        repository.findByUsername(registerRequest.getUsername()).ifPresent(__ -> {
-            throw new DuplicateValueException("This User is already registered ! ");
-        });
-        repositoryRefreshToken.findByDeviceId(registerRequest.getDeviceId()).ifPresent(__ -> {
-            throw new DuplicateValueException("This device id is already exist !");
-        });
+        device = Device.builder()
+                .deviceUuid(randomUUID())
+                .deviceInfo(deviceInfo)
+                .isAvailable(true)
+                .build();
+        user.addDevice(device);
 
         final Users savedUser = repository.save(user);
 
-        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser, registerRequest.getDeviceId(), deviceInfo);
+        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(device.getDeviceUuid());
         String accessToken = jwtAuthService.generateAccessToken(savedUser.getUsername());
         final UserSummary userResponse = userMapper.toSummary(savedUser);
 
-        return new JwtAuthResponse(refreshToken.getToken(), accessToken, userResponse);
+        return new AuthResponse(refreshToken.getToken(), accessToken, userResponse, device.getDeviceUuid());
     }
 
     private Users getCurrentUserById(Long userId) {

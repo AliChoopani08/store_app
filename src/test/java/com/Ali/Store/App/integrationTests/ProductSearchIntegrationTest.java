@@ -3,7 +3,7 @@ package com.Ali.Store.App.integrationTests;
 import com.Ali.Store.App.entities.productAndCategory.Category;
 import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
-import com.Ali.Store.App.testConfigs.TestJpaAuditingConfig;
+import com.Ali.Store.App.testConfigs.TestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestJpaAuditingConfig.class)
+@Import(TestConfig.class)
 public class ProductSearchIntegrationTest {
 
     @Autowired
