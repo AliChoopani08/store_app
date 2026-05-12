@@ -1,9 +1,10 @@
 package com.Ali.Store.App.product.controller;
 
-import com.Ali.Store.App.security.jwt.JwtAuthServiceImpl;
-import com.Ali.Store.App.service.product.ServiceProductInterface;
+import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
+import com.Ali.Store.App.service.product.ProductService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
 import static org.mockito.Mockito.mock;
 
@@ -11,12 +12,17 @@ import static org.mockito.Mockito.mock;
 public class ConfigClassTest {
 
     @Bean
-    public ServiceProductInterface mockServiceProductInterface() {
-        return mock(ServiceProductInterface.class);
+    public ProductService mockServiceProductInterface() {
+        return mock(ProductService.class);
     }
 
   @Bean
-    public JwtAuthServiceImpl mockJwtService() {
-        return mock(JwtAuthServiceImpl.class);
+    public JwtAuthServiceInterface mockJwtService() {
+        return mock(JwtAuthServiceInterface.class);
   }
+
+    @Bean
+    public AuthenticationEntryPoint mockAuthEntryPoint() {
+        return mock(AuthenticationEntryPoint.class);
+    }
 }

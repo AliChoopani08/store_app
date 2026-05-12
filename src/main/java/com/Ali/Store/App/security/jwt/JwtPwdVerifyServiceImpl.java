@@ -1,5 +1,6 @@
 package com.Ali.Store.App.security.jwt;
 
+import com.Ali.Store.App.exceptions.security.JwtPasswordExpiredException;
 import com.Ali.Store.App.exceptions.security.PasswordVerifyTokenExceptions;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,10 +15,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
+import static java.lang.System.getenv;
+
 @Component
 public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
 
-    private final static String SECRET_KEY = System.getenv("SECRET_KEY_JWT_PASSWORD_VERIFICATION");
+    private final String SECRET_KEY;
+
+    public JwtPwdVerifyServiceImpl() {
+        this.SECRET_KEY = getenv("SECRET_KEY_JWT_PASSWORD_VERIFICATION");
+        if (SECRET_KEY == null || SECRET_KEY.isEmpty()) {
+            throw new IllegalStateException("This environment value is empty or doesn't exist !");
+        }
+    }
+
     private final Duration pwdVerifyTokenExpiryDuration = Duration.ofMinutes(5);
 
 
@@ -47,14 +58,25 @@ public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
 
     @Override
     public boolean isPwdVerifyTokenValid(String token) {
-            final Date expiration = Jwts.parser()
-                    .verifyWith(getKey(SECRET_KEY))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .getExpiration();
-
+            try {
+                final Date expiration = Jwts.parser()
+                        .verifyWith(getKey(SECRET_KEY))
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload()
+                        .getExpiration();
             return expiration.after(new Date());
+            }
+            catch (MalformedJwtException ex) {
+                throw new PasswordVerifyTokenExceptions("The Password Verify Token has invalid format !");
+            }
+            catch (SignatureException ex) {
+                throw new PasswordVerifyTokenExceptions("The Password Verify Token signature is invalid");
+            }
+            catch (ExpiredJwtException ex) {
+                throw new JwtPasswordExpiredException();
+            }
+
     }
 
     @Override
@@ -68,13 +90,13 @@ public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
                     .getSubject();
         }
         catch (MalformedJwtException ex) {
-            throw new PasswordVerifyTokenExceptions("The Password Verify Token has invalid format !");
+            throw new MalformedJwtException("The Password Verify Token has invalid format !");
         }
         catch (SignatureException ex) {
-            throw new PasswordVerifyTokenExceptions("The Password Verify Token signature is invalid");
+            throw new SignatureException("The Password Verify Token signature is invalid");
         }
         catch (ExpiredJwtException ex) {
-            throw new PasswordVerifyTokenExceptions("This password verify token expired !");
+            throw new JwtPasswordExpiredException();
         }
     }
 }

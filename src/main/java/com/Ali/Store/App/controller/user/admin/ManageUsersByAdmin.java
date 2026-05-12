@@ -2,14 +2,13 @@ package com.Ali.Store.App.controller.user.admin;
 
 import com.Ali.Store.App.dto.user.request.ChangeRoleRequest;
 import com.Ali.Store.App.dto.user.request.SearchUserRequest;
-import com.Ali.Store.App.dto.user.response.UserResponse;
+import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.service.admin.ManageUserServiceImpl;
-import com.Ali.Store.App.service.admin.ManageUsersServiceInterface;
+import com.Ali.Store.App.service.admin.ManageUsersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -27,7 +26,7 @@ import static org.springframework.http.ResponseEntity.status;
 @RequestMapping("/admin/user")
 public class ManageUsersByAdmin {
 
-    private final ManageUsersServiceInterface service;
+    private final ManageUsersService service;
 
     public ManageUsersByAdmin(ManageUserServiceImpl service) {
         this.service = service;
@@ -38,8 +37,8 @@ public class ManageUsersByAdmin {
             summary = "Search Users By Username",
             parameters = @Parameter(name = "username", description = "Including Email Or Phone Number", example = "09111222333")
     )
-    public ResponseEntity<Page<UserResponse>> searchUsers(@ModelAttribute SearchUserRequest searchUserRequest,
-                                                          @PageableDefault(sort = "id", direction = DESC)Pageable pageable) {
+    public ResponseEntity<Page<UserSummary>> searchUsers(@ModelAttribute SearchUserRequest searchUserRequest,
+                                                         @PageableDefault(sort = "id", direction = DESC)Pageable pageable) {
 
         return ok(service.searchUsers(searchUserRequest, pageable));
     }
@@ -48,7 +47,7 @@ public class ManageUsersByAdmin {
     @Operation(
             summary = "Get User By Id"
     )
-    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<UserSummary> getById(@PathVariable Long id) {
         return ok(service.findUserById(id));
     }
 
@@ -57,7 +56,7 @@ public class ManageUsersByAdmin {
             summary = "Delete User By id"
     )
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        service.deleteUserById(id);
+        service.disActiveUserById(id);
 
         return status(NO_CONTENT)
                 .build();
@@ -71,7 +70,7 @@ public class ManageUsersByAdmin {
                     @Parameter(name = "Alternative Role", description = "Including USER and ADMIN")
             }
     )
-    public ResponseEntity<UserResponse> roleChange(@PathVariable Long id, @RequestBody @Valid ChangeRoleRequest changeRoleRequest) {
+    public ResponseEntity<UserSummary> roleChange(@PathVariable Long id, @RequestBody @Valid ChangeRoleRequest changeRoleRequest) {
         return ok(service.changeRoleOfUser(id, changeRoleRequest));
     }
 }

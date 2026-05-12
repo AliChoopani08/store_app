@@ -17,6 +17,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Getter
 @Setter
 @ToString(of = {"id", "user"})
+@Builder
 public class Cart {
 
     @Id
@@ -24,14 +25,17 @@ public class Cart {
     private Long id;
 
     @OneToMany(mappedBy = "cart", cascade = ALL, fetch = LAZY)
-    private List<CartItems> cartItems = new ArrayList<>();
+    private List<CartItem> cartItems = new ArrayList<>();
 
     @OneToOne(fetch = LAZY)
     @JoinColumn(name = "user_id", unique = true)
     private Users user;
 
-    public void addCartItems(List<CartItems> cartItems) {
-        this.setCartItems(cartItems);
-        cartItems.forEach(item -> item.setCart(this));
+    public void addItems(CartItem item) {
+        if (this.getCartItems() == null) {
+            this.cartItems = new ArrayList<>();
+        }
+        this.getCartItems().add(item);
+        item.setCart(this);
     }
 }

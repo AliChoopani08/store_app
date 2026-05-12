@@ -40,24 +40,21 @@ public class SecurityWebConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/register"
+                        auth.requestMatchers("/admin/**" ,
+                                        "/check-out/**",
+                                        "/auth/me/username",
+                                        "/auth/me/password-verify",
+                                        "/auth/me/password-reset",
+                                        "/auth/refresh-token",
+                                        "/profile/**").authenticated()
+                        .requestMatchers("/auth/register"
                                         , "/auth/login"
                                         , "/auth/access/token"
                                         , "/product"
 
                                         , "/swagger-ui.html"
                                         , "/swagger-ui/**"
-                                        , "/v3/**"
-                                )
-                        .permitAll()
-                                .requestMatchers("/admin/**" ,
-                                        "/check-out/**",
-                                        "/auth/me/username",
-                                        "/auth/me/password-verify",
-                                        "/auth/me/password-reset",
-                                        "/auth/refresh-token",
-                                        "/profile/**")
-                                .authenticated()
+                                        , "/v3/**").permitAll()
                         .anyRequest()
                         .permitAll())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

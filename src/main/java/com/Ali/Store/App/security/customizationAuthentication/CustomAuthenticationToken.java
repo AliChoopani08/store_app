@@ -1,25 +1,38 @@
 package com.Ali.Store.App.security.customizationAuthentication;
 
+import lombok.Getter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
+import java.util.UUID;
 
+@Getter
 public class CustomAuthenticationToken extends UsernamePasswordAuthenticationToken {
 
-    private final String deviceId;
+    private final UUID deviceUuid;
 
-    public CustomAuthenticationToken(Object principal, Object credentials, String deviceId) {
+    /**
+     * For Unauthenticated Stage
+     */
+    public CustomAuthenticationToken(Object principal) {
+        super(principal, null);
+        this.deviceUuid = null;
+    }
+
+    /**
+     * For Login Stage
+     */
+    public CustomAuthenticationToken(Object principal, Object credentials, UUID deviceUuid) {
         super(principal, credentials);
-        this.deviceId = deviceId;
+        this.deviceUuid = deviceUuid;
     }
 
-    public CustomAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities, String deviceId) {
+    /**
+     * For Authentication Stage
+     */
+    public CustomAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities, UUID deviceUuid) {
         super(principal, credentials, authorities);
-        this.deviceId = deviceId;
-    }
-
-    public String getDeviceId() {
-        return deviceId;
+        this.deviceUuid = deviceUuid;
     }
 }

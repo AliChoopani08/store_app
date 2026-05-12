@@ -1,8 +1,8 @@
 package com.Ali.Store.App.checkOut.controller;
 
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
-import com.Ali.Store.App.service.checkOut.cart.ServiceCartInterface;
-import com.Ali.Store.App.service.checkOut.order.ServiceOrderInterface;
+import com.Ali.Store.App.service.checkOut.cart.CartService;
+import com.Ali.Store.App.service.checkOut.order.OrderService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -13,13 +13,13 @@ import static org.mockito.Mockito.mock;
 public class ConfigTestCheckOutController {
 
     @Bean
-    public ServiceOrderInterface mockServiceOrder() {
-        return mock(ServiceOrderInterface.class);
+    public OrderService mockServiceOrder() {
+        return mock(OrderService.class);
     }
 
     @Bean
-    public ServiceCartInterface mockServiceCart() {
-        return mock(ServiceCartInterface.class);
+    public CartService mockServiceCart() {
+        return mock(CartService.class);
     }
 
     @Bean

@@ -1,6 +1,6 @@
 package com.Ali.Store.App.security.refreshToken;
 
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryRefreshToken;
+import com.Ali.Store.App.repository.RefreshTokenRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,7 +14,7 @@ import java.time.Instant;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenCleanUpJob {
-    private final RepositoryRefreshToken repositoryRefreshToken;
+    private final RefreshTokenRepository repositoryRefreshToken;
 
     @Scheduled(fixedRate = 180000)// every 3 minute
     @Transactional

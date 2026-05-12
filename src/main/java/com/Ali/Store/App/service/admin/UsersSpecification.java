@@ -9,7 +9,7 @@ public class UsersSpecification {
         return ((root, __, criteriaBuilder) ->
                 username == null ? null : criteriaBuilder
                         .like(criteriaBuilder
-                                .lower(root.get("username"))
-                                    , "%" + username.toLowerCase() + "%"));
+                                        .lower(root.get("username"))
+                                , "%" + username.toLowerCase() + "%"));
     }
 }

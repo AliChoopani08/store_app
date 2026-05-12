@@ -5,8 +5,8 @@ import com.Ali.Store.App.dto.checkout.response.UserCartDetailsDto;
 import com.Ali.Store.App.dto.checkout.response.UserOrderDetailsDto;
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
-import com.Ali.Store.App.service.checkOut.cart.ServiceCartInterface;
-import com.Ali.Store.App.service.checkOut.order.ServiceOrderInterface;
+import com.Ali.Store.App.service.checkOut.cart.CartService;
+import com.Ali.Store.App.service.checkOut.order.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,8 +29,8 @@ import static org.springframework.http.ResponseEntity.status;
 @RequiredArgsConstructor
 public class CheckoutController {
 
-    private final ServiceOrderInterface serviceOrder;
-    private final ServiceCartInterface serviceCart;
+    private final OrderService serviceOrder;
+    private final CartService serviceCart;
 
     @PostMapping("/cart")
     @Operation(
@@ -71,7 +71,7 @@ public class CheckoutController {
             description = "This operation removes the found cart-Item by its ID in the current user's cart."
     )
     public ResponseEntity<Void> deleteProductFromUserCart(@PathVariable("cart-itemId") Long cartItemId, @PathVariable Integer quantity) {
-        serviceCart.removeUserCartItemById(cartItemId, quantity);
+        serviceCart.reduceCartItemQuantity(cartItemId, quantity);
 
         return status(NO_CONTENT)
                 .build();

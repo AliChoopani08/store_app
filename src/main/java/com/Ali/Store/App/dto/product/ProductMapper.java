@@ -1,8 +1,8 @@
 package com.Ali.Store.App.dto.product;
 
 import com.Ali.Store.App.dto.product.request.CreateProductRequest;
-import com.Ali.Store.App.dto.product.response.CategoryResponse;
-import com.Ali.Store.App.dto.product.response.ProductResponse;
+import com.Ali.Store.App.dto.product.response.CategorySummary;
+import com.Ali.Store.App.dto.product.response.ProductSummary;
 import com.Ali.Store.App.entities.productAndCategory.Category;
 import com.Ali.Store.App.entities.productAndCategory.Product;
 import org.mapstruct.Mapper;
@@ -17,9 +17,9 @@ nullValuePropertyMappingStrategy = IGNORE)
 public interface ProductMapper {
 
     @Mapping(target = "category", ignore = true)
-    Product productRequestToProduct(CreateProductRequest productRequest);
+    Product toEntity(CreateProductRequest productRequest);
 
     @Mapping(source = "category", target = "categoryResponse")
-    ProductResponse productToProductResponse(Product product);
-    CategoryResponse categoryToCategoryResponse(Category category);
+    ProductSummary toSummary(Product product);
+    CategorySummary toSummary(Category category);
 }

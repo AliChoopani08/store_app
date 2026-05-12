@@ -7,12 +7,14 @@ import lombok.*;
 import java.time.LocalDate;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+@AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @ToString(of = {"name", "phoneNumber", "email", "birthData"})
 @EqualsAndHashCode(of = {"name", "phoneNumber", "email", "birthData"})
 @Entity
+@Builder(toBuilder = true)
 public class ProfileUser {
 
     @Id
@@ -29,13 +31,6 @@ public class ProfileUser {
     @JoinColumn(name = "user_id")
     @JsonIgnore
     private Users user;
-
-    public ProfileUser(String firstName,String phoneNumber, String email, LocalDate birthData) {
-        this.name = firstName;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.birthData = birthData;
-    }
 
     public void setUsernameOnCorrectFields(Users user) {
         if (user.getUsername().startsWith("09")) {

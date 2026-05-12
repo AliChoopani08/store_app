@@ -5,8 +5,8 @@ import com.Ali.Store.App.dto.product.request.FindProductRequest;
 import com.Ali.Store.App.dto.product.request.PriceDeltaRequest;
 import com.Ali.Store.App.dto.product.request.QuantityIncreaseRequest;
 import com.Ali.Store.App.dto.product.response.ApiResponse;
-import com.Ali.Store.App.dto.product.response.ProductResponse;
-import com.Ali.Store.App.service.product.ServiceProductInterface;
+import com.Ali.Store.App.dto.product.response.ProductSummary;
+import com.Ali.Store.App.service.product.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,7 +28,7 @@ import static org.springframework.http.ResponseEntity.status;
 @RequiredArgsConstructor
 public class AdminControllerProduct {
 
-    private final ServiceProductInterface service;
+    private final ProductService service;
 
 
     @PostMapping
@@ -37,7 +37,7 @@ public class AdminControllerProduct {
             description = """
                      Behavior: \n
                      - If the product exists in the database ->
-                     its quantity and price is updated with
+                     its quantity and productPrice is updated with
                      fields of inserted product \n
                      - If the product does not exist ->
                       a new product is created.
@@ -46,14 +46,14 @@ public class AdminControllerProduct {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "Product is created -> (201)"
                         , description = "a new product was creates") ,
                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "Product quantity is updated -> (200)"
-                        , description = "An existing product quantity and price was updated")
+                        , description = "An existing product quantity and productPrice was updated")
            }
     )
     public ResponseEntity<ApiResponse<Map<String, Object>>> createOrUpdateProduct(@RequestBody @Valid CreateProductRequest productRequest) {
         final Map<String, Object> savedProduct = service.createOrUpdateProduct(productRequest);
 
         if (savedProduct.get("status") == INCREASED) {
-            final ApiResponse<Map<String, Object>> responseUpdateProduct = new ApiResponse<>(200,"Product quantity and price updated successfully",savedProduct);
+            final ApiResponse<Map<String, Object>> responseUpdateProduct = new ApiResponse<>(200,"Product quantity and productPrice updated successfully",savedProduct);
             return ok(responseUpdateProduct);
         }
         else {
@@ -67,29 +67,29 @@ public class AdminControllerProduct {
     @Operation(
             summary = "Increase Product Quantity"
     )
-    public ResponseEntity<ApiResponse<ProductResponse>> increaseProductQuantity(@PathVariable Long id, @RequestBody @Valid QuantityIncreaseRequest increaseRequest) {
-        final ProductResponse increasedQuality = service.increaseQuality(increaseRequest, id);
+    public ResponseEntity<ApiResponse<ProductSummary>> increaseProductQuantity(@PathVariable Long id, @RequestBody @Valid QuantityIncreaseRequest increaseRequest) {
+        final ProductSummary increasedQuality = service.increaseQuality(increaseRequest, id);
 
-        return ok(new ApiResponse<>(200, "Product quantity updated successfully.", increasedQuality));
+        return ok(new ApiResponse<>(200, "Product quantity updated successfully", increasedQuality));
     }
 
 
-    @PatchMapping("/price/{id}")
+    @PatchMapping("/productPrice/{id}")
     @Operation(
             summary = "Reset Product Price"
     )
-    public ResponseEntity<ApiResponse<ProductResponse>> resetProductPrice(@PathVariable Long id, @RequestBody @Valid PriceDeltaRequest priceDeltaRequest) {
-        final ProductResponse productResponse = service.resetProductPrice(priceDeltaRequest, id);
+    public ResponseEntity<ApiResponse<ProductSummary>> resetProductPrice(@PathVariable Long id, @RequestBody @Valid PriceDeltaRequest priceDeltaRequest) {
+        final ProductSummary productResponse = service.resetProductPrice(priceDeltaRequest, id);
 
-        return ok(new ApiResponse<>(200, "New price registered", productResponse));
+        return ok(new ApiResponse<>(200, "New productPrice registered", productResponse));
     }
 
     @GetMapping
     @Operation(
             summary = "Get Product By Name And Category"
     )
-    public ResponseEntity<ApiResponse<ProductResponse>> getProductByNameAndCategory(@ModelAttribute @Valid FindProductRequest findProductRequest) {
-        final ProductResponse productResponse = service.getProductByNameAndCategory(findProductRequest);
+    public ResponseEntity<ApiResponse<ProductSummary>> getProductByNameAndCategory(@ModelAttribute @Valid FindProductRequest findProductRequest) {
+        final ProductSummary productResponse = service.getProductByNameAndCategory(findProductRequest);
 
         return ok(new ApiResponse<>(200, "This product found", productResponse));
     }

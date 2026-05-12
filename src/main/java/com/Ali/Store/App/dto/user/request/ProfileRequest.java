@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Getter
 @EqualsAndHashCode
 @AllArgsConstructor
+@Builder
 public class ProfileRequest {
 
     private String name;

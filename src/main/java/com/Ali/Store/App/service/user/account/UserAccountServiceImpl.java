@@ -2,12 +2,12 @@ package com.Ali.Store.App.service.user.account;
 
 import com.Ali.Store.App.dto.user.UserMapper;
 import com.Ali.Store.App.dto.user.request.ProfileRequest;
-import com.Ali.Store.App.dto.user.response.ProfileResponse;
-import com.Ali.Store.App.dto.user.response.UserResponse;
+import com.Ali.Store.App.dto.user.response.ProfileSummary;
+import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,48 +15,50 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserAccountServiceImpl implements UserAccountServiceInterface{
+public class UserAccountServiceImpl implements UserAccountService {
 
-    private final RepositoryUser repository;
-    private final UserMapper userMapper;
+    private final UserRepository repository;
+    private final UserMapper mapper;
 
 
     @Override
     @Transactional
-    public UserResponse updateProfile(Long userId, ProfileRequest usersRequest) {
+    public UserSummary updateProfile(Long userId, ProfileRequest req) {
         final Users currentUser = getCurrentUserById(userId);
 
         final ProfileUser currentUserProfile = currentUser.getProfile();
-        final ProfileUser updatedProfile = userMapper.update(currentUserProfile, usersRequest);
+        final ProfileUser updatedProfile = mapper.update(currentUserProfile, req);
         repository.save(updatedProfile.getUser());
 
-        return getUserResponse(updatedProfile.getUser());
+        return mapper.toSummary(updatedProfile.getUser());
     }
 
     @Override
     @Transactional
-    public void deleteAccount(Long userId) {
+    public void disableAccount(Long userId) {
         final Users currentUser = getCurrentUserById(userId);
 
         SecurityContextHolder.clearContext();
-        repository.deleteById(currentUser.getId());
+        currentUser.setStatus(false);
+
+        repository.save(currentUser);
     }
 
     @Override
-    public UserResponse displayProfile(Long userId) {
+    public UserSummary displayProfile(Long userId) {
         final Users currentUser = getCurrentUserById(userId);
         return getUserResponse(currentUser);
     }
 
     private Users getCurrentUserById(Long userId) {
         return repository.findById(userId)
-                .orElseThrow(() -> new NotFoundUser("This user doesn't exist in database !"));
+                .orElseThrow(() -> new NotFoundUser(userId));
     }
 
-    private UserResponse getUserResponse(Users savedUser) {
-        final ProfileResponse profileResponse = userMapper.profileUserToProfileResponse(savedUser.getProfile());
+    private UserSummary getUserResponse(Users savedUser) {
+        final ProfileSummary profileResponse = mapper.toSummary(savedUser.getProfile());
 
-        return new UserResponse(savedUser.getId()
+        return new UserSummary(savedUser.getId()
                 , savedUser.getUsername()
                 , savedUser.getRole().name()
                 , profileResponse);

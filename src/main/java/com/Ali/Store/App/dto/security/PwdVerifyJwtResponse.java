@@ -1,6 +1,6 @@
 package com.Ali.Store.App.dto.security;
 
-import com.Ali.Store.App.dto.user.response.UserResponse;
+import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -14,5 +14,5 @@ public class PwdVerifyJwtResponse {
     private String passwordVerifyToken;
 
     @JsonProperty("User")
-    private UserResponse userResponse;
+    private UserSummary userResponse;
 }

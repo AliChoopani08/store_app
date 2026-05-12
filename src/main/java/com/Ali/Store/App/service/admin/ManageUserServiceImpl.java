@@ -1,77 +1,77 @@
 package com.Ali.Store.App.service.admin;
 
 import com.Ali.Store.App.dto.user.request.ChangeRoleRequest;
-import com.Ali.Store.App.dto.user.response.ProfileResponse;
 import com.Ali.Store.App.dto.user.request.SearchUserRequest;
 import com.Ali.Store.App.dto.user.UserMapper;
-import com.Ali.Store.App.dto.user.response.UserResponse;
+import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
-import com.Ali.Store.App.repository.userAndProfileUser.RepositoryUser;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
+import com.Ali.Store.App.service.product.AlwaysTrueSpecification;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import static com.Ali.Store.App.entities.userAndProfileUser.Role.valueOf;
+import static com.Ali.Store.App.service.admin.UsersSpecification.withUsername;
+import static java.util.Optional.ofNullable;
 
 @Service
-public class ManageUserServiceImpl implements ManageUsersServiceInterface{
+@RequiredArgsConstructor
+public class ManageUserServiceImpl implements ManageUsersService {
 
-    private final RepositoryUser repositoryUser;
+    private final UserRepository repositoryUser;
     private final UserMapper userMapper;
 
-    public ManageUserServiceImpl(RepositoryUser repositoryUser, UserMapper userMapper) {
-        this.repositoryUser = repositoryUser;
-        this.userMapper = userMapper;
+    @Override
+    public Page<UserSummary> searchUsers(SearchUserRequest searchUserRequest, Pageable pageable) {
+        List<Specification<Users>> specs = new LinkedList<>();
+
+        ofNullable(searchUserRequest.username())
+                .ifPresent(u -> specs.add(withUsername(u)));
+        final Specification<Users> finalSpec = specs.stream()
+                .reduce(new AlwaysTrueSpecification<>(), Specification::and);
+
+        return repositoryUser.findAll(finalSpec, pageable)
+                .map(userMapper::toSummary);
     }
 
     @Override
-    public Page<UserResponse> searchUsers(SearchUserRequest searchUserRequest, Pageable pageable) {
-        Specification<Users> spec = UsersSpecification
-                .withUsername(searchUserRequest.username());
-
-        return repositoryUser.findAll(spec, pageable)
-                .map(this::getUserResponse);
-    }
-
-    @Override
-    public UserResponse findUserById(Long id) {
+    public UserSummary findUserById(Long id) {
         final Users foundUser = getUserById(id);
 
-        return getUserResponse(foundUser);
+        return userMapper.toSummary(foundUser);
     }
 
     @Override
-    public void deleteUserById(Long id) {
+    public void disActiveUserById(Long id) {
         final Users foundUser = getUserById(id);
 
-        repositoryUser.delete(foundUser);
+        foundUser.setStatus(false);
+
+        repositoryUser.save(foundUser);
     }
 
 
 
     @Override
-    public UserResponse changeRoleOfUser(Long id, ChangeRoleRequest changeRoleRequest) {
+    public UserSummary changeRoleOfUser(Long id, ChangeRoleRequest changeRoleRequest) {
         final Users foundUser = getUserById(id);
 
         foundUser.setRole(valueOf(changeRoleRequest.getNewRole()));
         final Users savedUser = repositoryUser.save(foundUser);
 
-        return getUserResponse(savedUser);
+        return userMapper.toSummary(savedUser);
     }
 
-    private UserResponse getUserResponse(Users user) {
-        final ProfileResponse profileResponse = userMapper.profileUserToProfileResponse(user.getProfile());
-
-        return new UserResponse(user.getId()
-                , user.getUsername()
-                , user.getRole().name()
-                , profileResponse);
-    }
 
     private Users getUserById(Long id) {
         return repositoryUser.findById(id)
-                .orElseThrow(() -> new NotFoundUser("Not found user with this id !"));
+                .orElseThrow(() -> new NotFoundUser(id));
     }
 }

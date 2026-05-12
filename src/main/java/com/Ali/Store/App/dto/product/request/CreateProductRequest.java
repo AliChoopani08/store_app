@@ -3,10 +3,13 @@ package com.Ali.Store.App.dto.product.request;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class CreateProductRequest {
 
     @NotBlank(message = "Product name cannot be empty !")
@@ -15,7 +18,7 @@ public class CreateProductRequest {
 
     @NotNull(message = "Price cannot be null !")
     @Positive(message = "Price must be a positive number")
-    private Integer price;
+    private BigDecimal price;
 
     @NotBlank(message = "Product category cannot be empty !")
     @Pattern(regexp = "^[A-Za-z ]+$", message = "Entered category name is invalid !")
