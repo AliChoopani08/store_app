@@ -6,14 +6,16 @@ import com.Ali.Store.App.dto.user.request.*;
 import com.Ali.Store.App.dto.user.response.UserSummary;
 import com.Ali.Store.App.entities.userAndProfileUser.*;
 import com.Ali.Store.App.exceptions.security.ExpiredRefreshToken;
+import com.Ali.Store.App.exceptions.security.NotFoundRefreshToken;
 import com.Ali.Store.App.exceptions.user.DuplicateUsername;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
+import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticationToken;
 import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
-import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
+import com.Ali.Store.App.service.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final RefreshTokenServiceInterface refreshTokenService;
     private final PasswordEncoder encoder;
     private final JwtPwdVerifyServiceInterface jwtPwdVerifyService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
 
     @Override
@@ -71,7 +74,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final UserDetailsImpl userDetails = (UserDetailsImpl) authenticate.getPrincipal();
         final Users user = userMapper.userDetailsImplToUsers(userDetails);
 
-        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(deviceUuid);
+        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(deviceUuid, user.getId());
         final String accessToken = jwtAuthService.generateAccessToken(user.getUsername());
         final UserSummary userResponse = userMapper.toSummary(user);
 
@@ -82,7 +85,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
-        refreshTokenService.deleteByDeviceUuid(logoutRequest);
+        refreshTokenService.removeRefreshTokenByUserIdAndDeviceUuid(logoutRequest);
     }
 
     @Override
@@ -125,18 +128,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse createNewAccessToken(UUID deviceUuid, RefreshTokenRequest tokenRequest) {
-        if (!refreshTokenService.expiredRefreshToken(deviceUuid)) {
-            final RefreshToken foundRefreshToken = refreshTokenService.getByDeviceUuid(deviceUuid);
+        final RefreshToken foundRefreshToken = refreshTokenRepository.findByTokenAndDeviceUuid(tokenRequest.getToken(), deviceUuid)
+                .orElseThrow(NotFoundRefreshToken::new);
+
+        if (!refreshTokenService.expiredRefreshToken(foundRefreshToken)) {
             final Users user = foundRefreshToken.getDevice().getUser();
 
             final String createdAccessToken = jwtAuthService.generateAccessToken(user.getUsername());
             final UserSummary userResponse = userMapper.toSummary(user);
             return new AuthResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse, deviceUuid);
         } else {
-            refreshTokenService.deleteExpiredRefreshTokenByDeviceUUid(deviceUuid);
-            throw new ExpiredRefreshToken(tokenRequest.getToken());
+            refreshTokenService.deleteExpiredRefreshTokenByDeviceUUid(foundRefreshToken);
+            throw new ExpiredRefreshToken(foundRefreshToken.getToken());
         }
     }
 
@@ -161,7 +166,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         final Users savedUser = repository.save(user);
 
-        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(device.getDeviceUuid());
+        final RefreshToken refreshToken = refreshTokenService.createRefreshToken(device.getDeviceUuid(), savedUser.getId());
         String accessToken = jwtAuthService.generateAccessToken(savedUser.getUsername());
         final UserSummary userResponse = userMapper.toSummary(savedUser);
 

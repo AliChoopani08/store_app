@@ -51,6 +51,7 @@ public class RefreshTokenRepositoryTest {
                 .build();
         device = Device.builder()
                 .deviceUuid(deviceUuid)
+                .isAvailable(true)
                 .build();
         user.addDevice(device);
 
@@ -85,7 +86,16 @@ public class RefreshTokenRepositoryTest {
         repository.deleteByUserIdAndDeviceUuid(user.getId(), deviceUuid);
 
         assertThat(repository.findAll()).isEmpty();
+    }
 
+    @Test
+    void shouldFind_byTokenAndDeviceAndUser() {
+        final Optional<RefreshToken> foundToken = repository.findByTokenAndDeviceUuid(tokenUuid, deviceUuid);
+
+        assertThat(foundToken.isPresent()).isTrue();
+        foundToken.ifPresent(rt -> assertThat(rt)
+                .extracting(RefreshToken::getToken)
+                .isEqualTo(tokenUuid));
     }
 
     private UUID getDeviceUuid(Users user) {

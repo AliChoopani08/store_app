@@ -24,13 +24,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
             SELECT rt
             FROM RefreshToken rt
             JOIN rt.device d
-            JOIN d.user u
             WHERE rt.token = :token 
                 AND d.deviceUuid = :deviceUuid
                 AND d.isAvailable = true
-                AND u.id = :userId
             """)
-    Optional<RefreshToken> findByTokenAndDeviceAndUser(@Param("token") UUID token, @Param("deviceUuid") UUID deviceUuid, @Param("userId") Long userId);
+    Optional<RefreshToken> findByTokenAndDeviceUuid(@Param("token") UUID token, @Param("deviceUuid") UUID deviceUuid);
 
     @Modifying
     @Query("""
