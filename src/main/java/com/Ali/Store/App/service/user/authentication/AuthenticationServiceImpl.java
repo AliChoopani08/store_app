@@ -55,7 +55,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final Users user = userMapper.toEntity(userRequest);
         user.setRole(ROLE_USER);
 
-        return helperForCommonCodesOfSavePerson(userRequest, user, deviceInfo);
+        final AuthResponse authResponse = helperForCommonCodesOfSavePerson(userRequest, user, deviceInfo);
+
+        log.info("A new user [{}] registered successfully", authResponse.getUserResponse().id());
+        return authResponse;
     }
 
     @Override
@@ -64,7 +67,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final Users user = userMapper.createAdminRequestToUsers(createAdminRequest);
         user.setRole(valueOf(createAdminRequest.getRole()));
 
-        return helperForCommonCodesOfSavePerson(createAdminRequest, user, deviceInfo);
+        final AuthResponse authResponse = helperForCommonCodesOfSavePerson(createAdminRequest, user, deviceInfo);
+
+        log.info("A new admin [{}] created successfully", authResponse.getUserResponse().id());
+        return authResponse;
     }
 
     @Override
@@ -86,21 +92,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
         refreshTokenService.removeRefreshTokenByUserIdAndDeviceUuid(logoutRequest);
+
+        log.info("User [{}] logout and their refresh token deleted successfully", logoutRequest.getUserId());
     }
 
     @Override
     @Transactional
-    public UserSummary changeUsername(Long userId, ChangeUsernameRequest req) {
-        final Users currentUser = getCurrentUserById(userId);
+    public UserSummary changeUsername(Long userDetails, ChangeUsernameRequest req) {
+        final Users user = getCurrentUserById(userDetails);
 
-        currentUser.setUsername(req.getNewUsername());
-        final Users savedUser = repository.save(currentUser);
+        user.setUsername(req.getNewUsername());
+        final Users savedUser = repository.save(user);
 
+        log.info("User [{}] username changed successfully", user);
         return userMapper.toSummary(savedUser);
     }
 
     @Override
-    public PwdVerifyJwtResponse passwordVerify(Long userId, PasswordVerifyRequest passwordVerifyRequest) {
+    public PwdVerifyJwtResponse passwordVerifyAndGenerateAPasswwordVerifyToken(Long userId, PasswordVerifyRequest passwordVerifyRequest) {
         final Users user = getCurrentUserById(userId);
 
         if (!encoder.matches(passwordVerifyRequest.currentPassword, user.getPassword())) {
@@ -108,6 +117,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         final String createdToken = jwtPwdVerifyService.generatePwdVerificationToken(user.getUsername());
 
+        log.info("A new password verification token for user [{}] created successfully", user.getId());
         return new PwdVerifyJwtResponse(createdToken, userMapper.toSummary(user));
     }
 
@@ -123,6 +133,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         final Users savedUser = repository.save(foundUser);
 
+        log.info("User [{}] password changed successfully", savedUser.getId());
         return userMapper.toSummary(savedUser);
     }
 
@@ -134,13 +145,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(NotFoundRefreshToken::new);
 
         if (!refreshTokenService.expiredRefreshToken(foundRefreshToken)) {
-            final Users user = foundRefreshToken.getDevice().getUser();
+            final Users user = foundRefreshToken.getDevice()
+                    .getUser();
 
             final String createdAccessToken = jwtAuthService.generateAccessToken(user.getUsername());
             final UserSummary userResponse = userMapper.toSummary(user);
-            return new AuthResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse, deviceUuid);
+            final AuthResponse authResponse = new AuthResponse(foundRefreshToken.getToken(), createdAccessToken, userResponse, deviceUuid);
+            log.info("A new Access token for user [{}] created successfully", userResponse.id());
+            return authResponse;
         } else {
             refreshTokenService.deleteExpiredRefreshTokenByDeviceUUid(foundRefreshToken);
+            log.info("The expired refresh token [{}] deleted successfully", foundRefreshToken.getId());
             throw new ExpiredRefreshToken(foundRefreshToken.getToken());
         }
     }
@@ -174,6 +189,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private Users getCurrentUserById(Long userId) {
-        return repository.findById(userId).orElseThrow(() -> new NotFoundUser(userId));
+        return repository.findById(userId)
+                .orElseThrow(() -> new NotFoundUser(userId));
     }
 }

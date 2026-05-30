@@ -5,15 +5,17 @@ import com.Ali.Store.App.dto.product.request.CategoryRequest;
 import com.Ali.Store.App.dto.product.request.ChangeNameCategoryRequest;
 import com.Ali.Store.App.dto.product.response.CategorySummary;
 import com.Ali.Store.App.entities.productAndCategory.Category;
+import com.Ali.Store.App.exceptions.productAndCategory.DuplicateCategory;
 import com.Ali.Store.App.exceptions.productAndCategory.NotFoundCategory;
-import com.Ali.Store.App.exceptions.DuplicateValueException;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository repositoryCategory;
@@ -24,11 +26,12 @@ public class CategoryServiceImpl implements CategoryService {
     public CategorySummary createCategory(CategoryRequest request) {
     repositoryCategory.findByNameIgnoreCase(request.getName())
             .ifPresent(__ -> {
-                throw new DuplicateValueException("This category is already exist !");
+                throw new DuplicateCategory(request.getName());
             });
         final Category category = mapper.toEntity(request);
         final Category savedCategory = repositoryCategory.save(category);
 
+        log.info("Category [{}] created successfully", savedCategory.getId());
         return mapper.ToSummary(savedCategory);
     }
 
@@ -40,6 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
         foundCategory.setName(request.getNewName());
         final Category updatedCategory = repositoryCategory.save(foundCategory);
 
+        log.info("Category [{}] name changed successfully", updatedCategory.getId());
         return mapper.ToSummary(updatedCategory);
     }
 
@@ -55,7 +59,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void delete(Long id) {
-        repositoryCategory.deleteById(id);
+        final Category foundCategory = getCategoryById(id);
+
+        repositoryCategory.deleteById(foundCategory.getId());
+
+        log.info("Category [{}] deleted successfully", foundCategory.getId());
     }
 
 

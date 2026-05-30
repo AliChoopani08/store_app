@@ -8,6 +8,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -18,13 +19,16 @@ import java.util.Date;
 import static java.lang.System.getenv;
 
 @Component
+@Slf4j
 public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
 
+    private static final String KEY_NAME_PASSWORD_VERIFY = "SECRET_KEY_JWT_PASSWORD_VERIFICATION";
     private final String SECRET_KEY;
 
     public JwtPwdVerifyServiceImpl() {
-        this.SECRET_KEY = getenv("SECRET_KEY_JWT_PASSWORD_VERIFICATION");
+        this.SECRET_KEY = getenv(KEY_NAME_PASSWORD_VERIFY);
         if (SECRET_KEY == null || SECRET_KEY.isEmpty()) {
+            log.warn("This environment value [{}] is empty or doesn't exist !", KEY_NAME_PASSWORD_VERIFY);
             throw new IllegalStateException("This environment value is empty or doesn't exist !");
         }
     }
@@ -65,7 +69,7 @@ public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
                         .parseSignedClaims(token)
                         .getPayload()
                         .getExpiration();
-            return expiration.after(new Date());
+            return expiration.before(new Date());
             }
             catch (MalformedJwtException ex) {
                 throw new PasswordVerifyTokenExceptions("The Password Verify Token has invalid format !");
@@ -90,10 +94,10 @@ public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
                     .getSubject();
         }
         catch (MalformedJwtException ex) {
-            throw new MalformedJwtException("The Password Verify Token has invalid format !");
+            throw new PasswordVerifyTokenExceptions("The Password Verify Token has invalid format !");
         }
         catch (SignatureException ex) {
-            throw new SignatureException("The Password Verify Token signature is invalid");
+            throw new PasswordVerifyTokenExceptions("The Password Verify Token signature is invalid");
         }
         catch (ExpiredJwtException ex) {
             throw new JwtPasswordExpiredException();

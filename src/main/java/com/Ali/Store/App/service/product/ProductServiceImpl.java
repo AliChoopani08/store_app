@@ -11,6 +11,7 @@ import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import com.Ali.Store.App.repository.productAndCategory.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,6 +31,7 @@ import static java.util.Optional.ofNullable;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository repositoryProduct;
@@ -89,7 +91,15 @@ public class ProductServiceImpl implements ProductService {
     public ProductSummary increaseQuality(QuantityIncreaseRequest request, Long productId) {
         final Product foundProduct = getProductById(productId);
 
-        return updateProductQuantity(request.getQuantity(), foundProduct);
+        final Product updatedProduct = foundProduct.toBuilder()
+                .quantity(foundProduct.getQuantity() + request.getQuantity())
+                .isAvailable(foundProduct.getQuantity() > 0)
+                .build();
+
+        final Product savedProduct = repositoryProduct.save(updatedProduct);
+
+        log.info("Product [{}] quantity increased successfully", savedProduct.getId());
+        return productMapper.toSummary(savedProduct);
     }
 
     @Override
@@ -117,12 +127,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductSummary resetProductPrice(PriceDeltaRequest desiredProduct, Long productId) {
+    public ProductSummary updateProductPrice(PriceDeltaRequest desiredProduct, Long productId) {
         final Product foundProduct = getProductById(productId);
 
         foundProduct.setPrice(desiredProduct.getNewPrice());
         repositoryProduct.save(foundProduct);
 
+        log.info("Product [{}] price updated successfully", foundProduct.getId());
         return productMapper.toSummary(foundProduct);
     }
 
@@ -139,21 +150,13 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long productId) {
         final Product foundProduct = getProductById(productId);
 
-        repositoryProduct.delete(foundProduct);
+        repositoryProduct.deleteById(foundProduct.getId());
+        log.info("Product [{}] deleted successfully", foundProduct.getId());
     }
 
     private Category getCategoryByName(String name) {
         return repositoryCategory.findByNameIgnoreCase(name)
                 .orElseThrow(() -> new NotFoundCategory(name));
-    }
-
-    private ProductSummary updateProductQuantity(int requestedQuantity, Product existingProduct) {
-        existingProduct.setQuantity(existingProduct.getQuantity() + requestedQuantity);
-        existingProduct.setAvailable(existingProduct.getQuantity() > 0);
-
-        final Product savedProduct = repositoryProduct.save(existingProduct);
-
-        return productMapper.toSummary(savedProduct);
     }
 
     private ProductSummary createNewProduct(CreateProductRequest productRequest) {
@@ -169,6 +172,7 @@ public class ProductServiceImpl implements ProductService {
                 .build();
         final Product finalSavedProduct = repositoryProduct.save(createProductWithSlug.apply(savedProduct));
 
+        log.info("A new product [{}] created successfully", finalSavedProduct.getId());
         return productMapper.toSummary(finalSavedProduct);
     }
 
@@ -177,6 +181,7 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setQuantity(productRequest.getQuantity());
         final Product savedProduct = repositoryProduct.save(existingProduct);
 
+        log.info("Product [{}] quantity and price increased successfully", savedProduct.getId());
         return productMapper.toSummary(savedProduct);
 
     }

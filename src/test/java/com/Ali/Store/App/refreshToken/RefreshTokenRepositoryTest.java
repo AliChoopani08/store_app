@@ -7,6 +7,7 @@ import com.Ali.Store.App.exceptions.user.NotFoundDevice;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Instant.now;
@@ -25,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@Slf4j
 public class RefreshTokenRepositoryTest {
 
     @Autowired
@@ -108,5 +111,10 @@ public class RefreshTokenRepositoryTest {
     private Users getUser() {
         return userRepository.findByUsername(this.user.getUsername())
                 .orElseThrow(() -> new NotFoundUser(this.user.getUsername()));
+    }
+
+    @Test
+    void name() {
+        log.info("kkk");
     }
 }

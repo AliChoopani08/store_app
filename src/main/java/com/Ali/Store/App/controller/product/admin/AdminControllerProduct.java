@@ -6,13 +6,16 @@ import com.Ali.Store.App.dto.product.request.PriceDeltaRequest;
 import com.Ali.Store.App.dto.product.request.QuantityIncreaseRequest;
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.product.response.ProductSummary;
+import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.product.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import static com.Ali.Store.App.service.product.ItemStatus.INCREASED;
@@ -26,6 +29,7 @@ import static org.springframework.http.ResponseEntity.status;
 @RequestMapping("/admin/product")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminControllerProduct {
 
     private final ProductService service;
@@ -49,7 +53,11 @@ public class AdminControllerProduct {
                         , description = "An existing product quantity and productPrice was updated")
            }
     )
-    public ResponseEntity<ApiResponse<Map<String, Object>>> createOrUpdateProduct(@RequestBody @Valid CreateProductRequest productRequest) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createOrUpdateProduct(@AuthenticationPrincipal UserDetailsImpl currentAdmin,
+                                                                                  @RequestBody @Valid CreateProductRequest productRequest) {
+
+        log.info("API request: create product [{}] by admin [{}]...", productRequest.getName(), currentAdmin.getId());
+
         final Map<String, Object> savedProduct = service.createOrUpdateProduct(productRequest);
 
         if (savedProduct.get("status") == INCREASED) {
@@ -67,7 +75,10 @@ public class AdminControllerProduct {
     @Operation(
             summary = "Increase Product Quantity"
     )
-    public ResponseEntity<ApiResponse<ProductSummary>> increaseProductQuantity(@PathVariable Long id, @RequestBody @Valid QuantityIncreaseRequest increaseRequest) {
+    public ResponseEntity<ApiResponse<ProductSummary>> increaseProductQuantity(@PathVariable Long id, @RequestBody @Valid QuantityIncreaseRequest increaseRequest,
+                                                                               @AuthenticationPrincipal UserDetailsImpl currentAdmin) {
+        log.info("API request: increase product [{}] quantity by admin [{}]...", id, currentAdmin.getId());
+
         final ProductSummary increasedQuality = service.increaseQuality(increaseRequest, id);
 
         return ok(new ApiResponse<>(200, "Product quantity updated successfully", increasedQuality));
@@ -76,10 +87,14 @@ public class AdminControllerProduct {
 
     @PatchMapping("/productPrice/{id}")
     @Operation(
-            summary = "Reset Product Price"
+            summary = "Update Product Price"
     )
-    public ResponseEntity<ApiResponse<ProductSummary>> resetProductPrice(@PathVariable Long id, @RequestBody @Valid PriceDeltaRequest priceDeltaRequest) {
-        final ProductSummary productResponse = service.resetProductPrice(priceDeltaRequest, id);
+    public ResponseEntity<ApiResponse<ProductSummary>> updateProductPrice(@PathVariable Long id, @RequestBody @Valid PriceDeltaRequest priceDeltaRequest
+            ,@AuthenticationPrincipal UserDetailsImpl currentAdmin) {
+
+       log.info("API request: update product [{}] price by admin [{}]...", id, currentAdmin.getId());
+
+        final ProductSummary productResponse = service.updateProductPrice(priceDeltaRequest, id);
 
         return ok(new ApiResponse<>(200, "New productPrice registered", productResponse));
     }
@@ -98,7 +113,9 @@ public class AdminControllerProduct {
     @Operation(
             summary = "Delete Product By Id"
     )
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl currentAdmin) {
+        log.info("API request: delete product [{}] by admin [{}]...", id, currentAdmin.getId());
+
         service.deleteProduct(id);
 
         return status(NO_CONTENT)

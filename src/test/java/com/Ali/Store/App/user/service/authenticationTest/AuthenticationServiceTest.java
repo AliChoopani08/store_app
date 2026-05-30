@@ -189,7 +189,7 @@ public class AuthenticationServiceTest {
         whenHelper(pwdVerifyService.generatePwdVerificationToken(anyString()), fakePwdVerifyToken);
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
-        final PwdVerifyJwtResponse generatedToken = service.passwordVerify(userId, request);
+        final PwdVerifyJwtResponse generatedToken = service.passwordVerifyAndGenerateAPasswwordVerifyToken(userId, request);
 
         assertThat(generatedToken)
                 .extracting(PwdVerifyJwtResponse::getPasswordVerifyToken, p -> p.getUserResponse().username())

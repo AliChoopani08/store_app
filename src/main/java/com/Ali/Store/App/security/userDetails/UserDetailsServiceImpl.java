@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
 @Service
@@ -21,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         final Users foundUser = repositoryUser.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("This username doesn't exist in database !"));
+                .orElseThrow(() -> new UsernameNotFoundException(format("This username [%s] doesn't exist in database !", username)));
 
         return UserDetailsImpl.builder()
                 .username(foundUser.getUsername())

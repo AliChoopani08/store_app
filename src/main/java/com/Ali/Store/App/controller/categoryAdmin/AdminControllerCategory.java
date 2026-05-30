@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import static org.springframework.http.ResponseEntity.status;
 @RequestMapping("/admin/category")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminControllerCategory {
 
     private final CategoryService categoryService;
@@ -32,6 +34,7 @@ public class AdminControllerCategory {
             summary = "Create New Category"
     )
     public ResponseEntity<ApiResponse<CategorySummary>> createCategory(@RequestBody @Valid CategoryRequest categoryRequest) {
+        log.info("API request: create category [{}]...", categoryRequest.getName());
         final CategorySummary savedCategory = categoryService.createCategory(categoryRequest);
 
         return status(CREATED)
@@ -44,6 +47,8 @@ public class AdminControllerCategory {
             parameters = @Parameter(name = "newName", description = "Alternative Name Of This Product")
     )
     public ResponseEntity<ApiResponse<CategorySummary>> changeCategoryName(@PathVariable Long id, @RequestBody @Valid ChangeNameCategoryRequest changeNameRequest) {
+        log.info("API request: change category name [{}]...", id);
+
         final CategorySummary changedCategory = categoryService.changeName(id, changeNameRequest);
 
         return ok(new ApiResponse<>(200, "The category name changed successfully", changedCategory ));
@@ -64,6 +69,7 @@ public class AdminControllerCategory {
             summary = "Delete Category By Id"
     )
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        log.info("API request: delete category [{}]...", id);
         categoryService.delete(id);
 
         return status(NO_CONTENT)

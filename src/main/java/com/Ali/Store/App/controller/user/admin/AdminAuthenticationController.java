@@ -4,14 +4,17 @@ package com.Ali.Store.App.controller.user.admin;
 import com.Ali.Store.App.dto.product.response.ApiResponse;
 import com.Ali.Store.App.dto.user.request.CreateAdminRequest;
 import com.Ali.Store.App.dto.security.AuthResponse;
+import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.ResponseEntity.status;
@@ -21,6 +24,7 @@ import static org.springframework.http.ResponseEntity.status;
 @RequestMapping("/admin/auth")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminAuthenticationController {
 
     private final AuthenticationService service;
@@ -30,7 +34,10 @@ public class AdminAuthenticationController {
             summary = "Create Another Admin",
             description = "Just an admin who has logged in can register another admin"
     )
-    public ResponseEntity<ApiResponse<AuthResponse>> createAdminAccount(@RequestBody @Valid CreateAdminRequest createAdminRequest, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> createAdminAccount(@AuthenticationPrincipal UserDetailsImpl currentAdmin,
+                                                                        @RequestBody @Valid CreateAdminRequest createAdminRequest,
+                                                                        HttpServletRequest request) {
+        log.info("API request: create a new admin by admin [{}]...", currentAdmin.getId());
         final String deviceId = request.getHeader("User-Agent");
 
         final AuthResponse jwtResponse = service.saveAdmin(createAdminRequest, deviceId);

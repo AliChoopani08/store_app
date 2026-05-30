@@ -10,6 +10,7 @@ import com.Ali.Store.App.repository.DeviceRepository;
 import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import static java.util.UUID.randomUUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
 
     private final Duration duration = Duration.ofDays(30); // for 30 days
@@ -41,7 +43,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
     @Override
     @Transactional
     public RefreshToken createRefreshToken(UUID deviceUuid, Long userId) {
-        final Device foundDevice = deviceRepository.findByDeviceUuidAndUserId(deviceUuid, userId)
+        log.info("Creating refresh token for user [{}]...", userId);
+
+        final Device savedDevice = deviceRepository.findByDeviceUuidAndUserId(deviceUuid, userId)
                         .map(d -> {
                             repositoryRefreshToken.findByDeviceUUid(deviceUuid)
                                 .ifPresent(rt -> {
@@ -60,7 +64,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
                         })
                 .orElseThrow(() -> new NotFoundDevice(deviceUuid));
 
-        return foundDevice.getRefreshToken();
+        log.info("Refresh token [{}] created successfully", savedDevice.getRefreshToken().getId());
+        return savedDevice.getRefreshToken();
     }
 
     @Override

@@ -121,7 +121,7 @@ public class AdminControllerProductTest {
                 .price(new BigDecimal("5000"))
                 .build();
 
-        givenHelper(() -> serviceProduct.resetProductPrice(any(PriceDeltaRequest.class), anyLong()), updatedProduct);
+        givenHelper(() -> serviceProduct.updateProductPrice(any(PriceDeltaRequest.class), anyLong()), updatedProduct);
 
         mockMvc.perform(patch("/admin/product/productPrice/1")
                         .with(user(fakeUser))

@@ -14,7 +14,7 @@ public interface AuthenticationService {
     AuthResponse login(LoginUserRequest loginUserRequest, UUID deviceUuid);
     void logout(LogoutRequest logoutRequest);
     UserSummary changeUsername(Long userId, ChangeUsernameRequest changeUsernameRequest);
-    PwdVerifyJwtResponse passwordVerify(Long userId, PasswordVerifyRequest passwordVerifyRequest);
+    PwdVerifyJwtResponse passwordVerifyAndGenerateAPasswwordVerifyToken(Long userId, PasswordVerifyRequest passwordVerifyRequest);
     UserSummary passwordReset(PasswordResetRequest passwordResetRequest);
     AuthResponse createNewAccessToken(UUID deviceUuid, RefreshTokenRequest refreshTokenRequest);
 }
