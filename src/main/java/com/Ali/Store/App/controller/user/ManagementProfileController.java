@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequestMapping("/profile")
 @RequiredArgsConstructor
+@Slf4j
 public class ManagementProfileController {
 
     private final UserAccountService service;
@@ -30,6 +32,8 @@ public class ManagementProfileController {
             description = "If each one of request fields be null, previous saved value doesn't change"
     )
     public ResponseEntity<ApiResponse<UserSummary>> updateUser(@AuthenticationPrincipal UserDetailsImpl currentUser, @RequestBody @Valid ProfileRequest profileRequest) {
+        log.info("API request: update all fields of profile of user [{}]...", currentUser.getId());
+
         final UserSummary updatedUser = service.updateProfile(currentUser.getId(), profileRequest);
 
         return ok(new ApiResponse<>(200, "Your profile fields updated successfully",updatedUser));
@@ -40,6 +44,8 @@ public class ManagementProfileController {
             summary = "Disable the Activated Account By User Who Has Been Logged In"
     )
     public ResponseEntity<Void> disableAccount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
+        log.info("API request: disable the user [{}] account...", currentUser.getId());
+
         service.disableAccount(currentUser.getId());
 
         return noContent().build();

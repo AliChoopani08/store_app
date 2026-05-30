@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 
+import static java.util.List.of;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,26 +41,38 @@ public class ProductSearchIntegrationTest {
 
     @Test
     void shouldSearchDynamicProduct() throws Exception {
-        mockMvc.perform(get("/product")
-                        .param("category", "mobile")
-                        .param("maxPrice", "3500"))
+        System.out.println(mockMvc.perform(get("/product")
+                        .param("category", "book"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].name").value("Iphone 15 pro max"));
+                .andExpect(jsonPath("$.data.content[0].name").value("Learning Java And Kotlin Concepts"))
+                .andReturn()
+                .getResponse().getContentAsString());
     }
 
     private void createDefaultCategoryAndProduct() {
-        final Category category = Category.builder()
+        final Category mobile = Category.builder()
                 .name("Mobile")
                 .build();
-        final Product product = Product.builder()
+        final Product product1 = Product.builder()
                 .name("Iphone 15 pro max")
                 .price(new BigDecimal("3000"))
                 .isAvailable(true)
                 .quantity(5)
                 .build();
 
-        category.addProduct(product);
+        mobile.addProduct(product1);
 
-        repositoryCategory.save(category);
+        Category book = Category.builder()
+                .name("Book")
+                .build();
+        Product product2 = Product.builder()
+                .name("Learning Java And Kotlin Concepts")
+                .price(new BigDecimal("5000"))
+                .isAvailable(true)
+                .quantity(3)
+                .build();
+        book.addProduct(product2);
+
+        repositoryCategory.saveAll(of(mobile, book));
     }
 }

@@ -32,7 +32,7 @@ public class CustomAuthEntryPoint implements AuthenticationEntryPoint {
         final String message = getAppropriateResponseMessage(authException);
         response.setStatus(SC_UNAUTHORIZED);
 
-        logger.error("Authentication failed: {}", message);
+        logger.warn("Authentication failed: {}", message);
         response.setContentType("application/json");
 
         final ResponseError responseError = new ResponseError(now(), 401, "UNAUTHORIZED", message, request.getRequestURI());
@@ -41,11 +41,11 @@ public class CustomAuthEntryPoint implements AuthenticationEntryPoint {
     }
     private static String getAppropriateResponseMessage(AuthenticationException authException) {
         String message = "";
-        if (authException instanceof BadCredentialsException) {
-            message = "Username or password are invalid !";
+        if (authException instanceof BadCredentialsException ex) {
+            message = ex.getMessage();
         }
-        else if (authException instanceof UsernameNotFoundException) {
-            message = "This username doesn't exist in database !";
+        else if (authException instanceof UsernameNotFoundException ex) {
+            message = ex.getMessage();
         }
         else if (authException instanceof LockedException) {
             message = "This account has been locked !";

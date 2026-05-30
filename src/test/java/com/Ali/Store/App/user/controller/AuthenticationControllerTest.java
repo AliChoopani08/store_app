@@ -48,13 +48,12 @@ public class AuthenticationControllerTest {
     private ObjectMapper objectMapper;
 
     private AuthResponse jwtResponse;
-    private UUID fakeRefreshToken;
     private UUID deviceUuid;
 
     @BeforeEach
     void setUp() {
         String fakeAccessToken = "fake.access.token";
-        fakeRefreshToken = randomUUID();
+        UUID fakeRefreshToken = randomUUID();
         deviceUuid = randomUUID();
 
         UserSummary userSummary = UserSummary.builder()
@@ -103,8 +102,7 @@ public class AuthenticationControllerTest {
 
     @Test
     void shouldCreateAccessToken_whenRefreshTokenAndDeviceUuidBeValid() throws Exception {
-        final String refreshTokenString = fakeRefreshToken.toString();
-        final RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(refreshTokenString);
+        final RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(randomUUID());
 
         givenHelper(() -> service.createNewAccessToken(any(UUID.class), any(RefreshTokenRequest.class)), jwtResponse);
 

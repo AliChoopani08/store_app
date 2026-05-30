@@ -28,7 +28,7 @@ import static com.Ali.Store.App.service.checkOut.order.OrderStatus.PENDING;
 import static com.Ali.Store.App.service.product.ItemStatus.CREATED;
 import static java.time.LocalDate.of;
 import static java.util.List.of;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -100,7 +100,7 @@ public class CheckoutControllerTest {
 
     @Test
     void shouldDeleteProductFromCart_whenProductExists() throws Exception {
-        willDoNothing().given(serviceCart).reduceCartItemQuantity(any(Long.class), any(Integer.class));
+        willDoNothing().given(serviceCart).reduceCartItemQuantity(anyLong(),anyInt(), anyLong());
 
         mockMvc.perform(delete("/check-out/cart/3/2")
                 .with(user(fakeUser))
@@ -126,7 +126,7 @@ public class CheckoutControllerTest {
                 .orderStatus(PENDING)
                 .build();
 
-        givenHelper(() -> serviceOrder.createOrder(any(Long.class)), expectedUserOrderDetails);
+        givenHelper(() -> serviceOrder.createOrder(anyLong()), expectedUserOrderDetails);
 
         mockMvc.perform(post("/check-out/order")
                 .with(user(fakeUser))

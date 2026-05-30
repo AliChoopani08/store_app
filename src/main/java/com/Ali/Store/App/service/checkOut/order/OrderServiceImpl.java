@@ -7,6 +7,7 @@ import com.Ali.Store.App.entities.checkout.OrderItem;
 import com.Ali.Store.App.entities.checkout.Orders;
 import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
+import com.Ali.Store.App.exceptions.checkout.NotFoundCart;
 import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import com.Ali.Store.App.repository.checkout.CartRepository;
 import com.Ali.Store.App.repository.checkout.CartItemsRepository;
@@ -15,6 +16,7 @@ import com.Ali.Store.App.repository.checkout.OrderItemsRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -42,6 +44,7 @@ import static java.math.BigDecimal.valueOf;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository repositoryOrder;
@@ -67,7 +70,10 @@ public class OrderServiceImpl implements OrderService {
         final BigDecimal totalPrice = getTotalPrice(cart);
         final List<OrderItem> orderItems = createOrderItems(cart);
 
-        Orders order = Orders.builder().totalPrice(totalPrice).orderStatus(PENDING).build();
+        Orders order = Orders.builder()
+                .totalPrice(totalPrice)
+                .orderStatus(PENDING)
+                .build();
 
         orderItems.forEach(order::addItem);
         currentUser.addOrder(order);
@@ -78,6 +84,7 @@ public class OrderServiceImpl implements OrderService {
 
         final List<OrderItemDetailsDto> orderItemsDetails = repositoryOrderItems.findUserOrderItemsDetails(currentUser.getId(), savedOrder.getId());
 
+        log.info("Order [{}] placed for user [{}] successfully", savedOrder.getId(), currentUser.getId());
         return new UserOrderDetailsDto(currentUser.getId(), savedOrder.getId(), orderItemsDetails, totalPrice, order.getOrderStatus());
     }
 
@@ -87,11 +94,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private Cart getUserCart(Users currentUser) {
-        return repositoryCart.findByUserId(currentUser.getId()).orElseThrow(() -> new RuntimeException("This user cart is not exist in database !"));
+        final Long userId = currentUser.getId();
+
+        return repositoryCart.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundCart(userId));
     }
 
     private static BigDecimal getTotalPrice(Cart cart) {
-        return cart.getCartItems().stream().map(i -> {
+        return cart.getCartItems().stream()
+                .map(i -> {
             final Product product = i.getProduct();
 
             return (product != null) ? product.getPrice().multiply(valueOf(i.getQuantity())) : ZERO;

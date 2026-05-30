@@ -13,7 +13,7 @@ public interface ProductService {
     Map<String, Object> createOrUpdateProduct(CreateProductRequest productRequest);
     ProductSummary increaseQuality(QuantityIncreaseRequest request, Long productId);
     Page<ProductSummary> searchProducts(SearchProductRequest search, Pageable pageable);
-    ProductSummary resetProductPrice(PriceDeltaRequest priceDeltaRequest, Long productId);
+    ProductSummary updateProductPrice(PriceDeltaRequest priceDeltaRequest, Long productId);
     ProductSummary getProductByNameAndCategory(FindProductRequest findProductRequest);
     void deleteProduct(Long productId);
 }

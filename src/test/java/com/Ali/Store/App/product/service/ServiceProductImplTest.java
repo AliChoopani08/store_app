@@ -117,7 +117,7 @@ public class ServiceProductImplTest {
         whenHelper(repositoryProduct.save(any(Product.class)), updatedProduct);
         whenHelper(productMapper.toSummary(any(Product.class)), updatedResponse);
 
-        final ProductSummary updatedProductPrice = serviceProduct.resetProductPrice(priceDeltaRequest, productId);
+        final ProductSummary updatedProductPrice = serviceProduct.updateProductPrice(priceDeltaRequest, productId);
 
         assertThat(updatedProductPrice)
                 .extracting(ProductSummary::name, p -> p.price().intValue())

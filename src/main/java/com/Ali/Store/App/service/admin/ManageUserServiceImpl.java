@@ -9,6 +9,7 @@ import com.Ali.Store.App.exceptions.user.NotFoundUser;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.service.product.AlwaysTrueSpecification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,6 +24,7 @@ import static java.util.Optional.ofNullable;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ManageUserServiceImpl implements ManageUsersService {
 
     private final UserRepository repositoryUser;
@@ -54,6 +56,7 @@ public class ManageUserServiceImpl implements ManageUsersService {
 
         foundUser.setStatus(false);
 
+        log.info("User [{}] has been deactivated successfully", foundUser.getId());
         repositoryUser.save(foundUser);
     }
 
@@ -64,9 +67,10 @@ public class ManageUserServiceImpl implements ManageUsersService {
         final Users foundUser = getUserById(id);
 
         foundUser.setRole(valueOf(changeRoleRequest.getNewRole()));
-        final Users savedUser = repositoryUser.save(foundUser);
+        final Users updatedUser = repositoryUser.save(foundUser);
 
-        return userMapper.toSummary(savedUser);
+        log.info("User [{}] role changed to [{}] successfully", updatedUser.getId(), updatedUser.getRole().name());
+        return userMapper.toSummary(updatedUser);
     }
 
 

@@ -1,16 +1,6 @@
 package com.Ali.Store.App.service.admin;
 
-import com.Ali.Store.App.entities.userAndProfileUser.ProfileUser;
-import com.Ali.Store.App.entities.userAndProfileUser.RefreshToken;
-import com.Ali.Store.App.entities.userAndProfileUser.Users;
-import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
-import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
-import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import static com.Ali.Store.App.entities.userAndProfileUser.Role.ROLE_ADMIN;
 
 @Configuration
 public class DataInitializer {

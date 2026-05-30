@@ -25,7 +25,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         response.setStatus(SC_FORBIDDEN);
 
-        logger.error("Authorization error, message: {} ", accessDeniedException.getMessage());
+        logger.warn("Authorization error, message: {} ", accessDeniedException.getMessage());
         final ResponseError responseError = new ResponseError
                 (now(), 403, "Forbidden", "You don't have permission to access this resource !", request.getRequestURI());
 

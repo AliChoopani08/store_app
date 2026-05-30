@@ -36,7 +36,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         final UserDetailsImpl user = (UserDetailsImpl) userDetailsService.loadUserByUsername(username);
 
         if (!passwordEncoder.matches(rowPassword, user.getPassword())) {
-            throw new BadCredentialsException("Password is invalid !");
+            throw new BadCredentialsException("The entered password with registered password aren't match !");
         }
         if (userRepository.findByUsernameAndDeviceUuidAndIsAvailable(username, deviceUuid).isEmpty()) {
             throw new DeviceNotAllowedException(deviceUuid.toString());

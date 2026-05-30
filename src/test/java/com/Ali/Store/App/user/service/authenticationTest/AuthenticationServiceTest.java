@@ -14,7 +14,7 @@ import com.Ali.Store.App.security.customizationAuthentication.CustomAuthenticati
 import com.Ali.Store.App.dto.security.AuthResponse;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.security.jwt.JwtPwdVerifyServiceInterface;
-import com.Ali.Store.App.security.refreshToken.RefreshTokenServiceInterface;
+import com.Ali.Store.App.service.refreshToken.RefreshTokenServiceInterface;
 import com.Ali.Store.App.security.userDetails.UserDetailsImpl;
 import com.Ali.Store.App.service.user.authentication.AuthenticationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,7 +105,7 @@ public class AuthenticationServiceTest {
         whenHelper(repository.findByUsername(anyString()), empty());
         whenHelper(passwordEncoder.encode(anyString()), fakeEncodedPassword);
         whenHelper(repository.save(any(Users.class)), user);
-        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class)), refreshToken);
+        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class), anyLong()), refreshToken);
         whenHelper(jwtAuthService.generateAccessToken(anyString()), authTokenResponse.getAccessToken());
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
@@ -130,7 +130,7 @@ public class AuthenticationServiceTest {
         when(userMapper.userDetailsImplToUsers(eq((UserDetailsImpl) fakeAuth.getPrincipal())))
                 .thenReturn(user);
         whenHelper(jwtAuthService.generateAccessToken(anyString()), authTokenResponse.getAccessToken());
-        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class)), refreshToken);
+        whenHelper(refreshTokenService.createRefreshToken(any(UUID.class), anyLong()), refreshToken);
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
         final AuthResponse loggedIn = service.login(loginReq, deviceUuid);
@@ -189,7 +189,7 @@ public class AuthenticationServiceTest {
         whenHelper(pwdVerifyService.generatePwdVerificationToken(anyString()), fakePwdVerifyToken);
         whenHelper(userMapper.toSummary(any(Users.class)), userResponse);
 
-        final PwdVerifyJwtResponse generatedToken = service.passwordVerify(userId, request);
+        final PwdVerifyJwtResponse generatedToken = service.passwordVerifyAndGenerateAPasswwordVerifyToken(userId, request);
 
         assertThat(generatedToken)
                 .extracting(PwdVerifyJwtResponse::getPasswordVerifyToken, p -> p.getUserResponse().username())

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.LinkedList;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.time.LocalDateTime.now;
+import static java.util.List.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
@@ -41,7 +43,8 @@ public class CartItemsRepositoryTest {
     @Autowired
     private CategoryRepository repositoryCategory;
 
-    private Users savedUser;
+    private Long userId;
+    private Long cartId;
     private final List<Product> getAllSavedProducts = new LinkedList<>();
 
     @BeforeEach
@@ -53,8 +56,9 @@ public class CartItemsRepositoryTest {
         repositoryCartItems.deleteAll();
 
         final Users user = createUser();
-        savedUser = createUserCart(user);
+        userId = createUserCart(user).getId();
         createCategoryAndAddProducts();
+        cartId = addAndSaveCartItems(userId, getDefaultCartItems()).getId();
     }
 
     private Users createUserCart(Users user) {
@@ -71,25 +75,22 @@ public class CartItemsRepositoryTest {
 
     @Test
     void shouldFindUserCartItemsDetails_whenUserExists() {
-        final Long userId = savedUser.getId();
 
         addAndSaveCartItems(userId, getDefaultCartItems());
 
         final List<CartItemDto> foundProfileCartItemsDetails = repositoryCartItems.findUserCartItemsDetails(userId);
 
-        assertThat(foundProfileCartItemsDetails)
+        assertThat(foundProfileCartItemsDetails.getFirst())
                 .extracting(CartItemDto::productName, CartItemDto::productCategory, CartItemDto::quantity, i -> i.totalProductPrice().intValue())
-                .containsExactly(tuple("Fish Stew With Rice", "Food", 3, 9000));
+                .containsExactly("Fish Stew With Rice", "Food", 3, 9000);
 
     }
 
     @Test
     void shouldFindCartItemsOfCartOfUser_whenExist() {
-        final Long userId = savedUser.getId();
         final Product firstProduct = repositoryProduct.findAll().getFirst();
-        final Cart cart = addAndSaveCartItems(userId, getDefaultCartItems());
 
-        final Optional<CartItem> foundItemByProductAndCart = repositoryCartItems.findByCartAndProduct(cart.getId(), firstProduct.getId());
+        final Optional<CartItem> foundItemByProductAndCart = repositoryCartItems.findByCartAndProduct(cartId, firstProduct.getId());
 
         foundItemByProductAndCart.ifPresent(i -> assertThat(i)
                 .extracting(c -> c.getProduct().getName())
@@ -98,47 +99,67 @@ public class CartItemsRepositoryTest {
 
     @Test
     void shouldDeleteAllByCartId_whenItemsExist() {
-        final Long userId = savedUser.getId();
-        final Cart cart = addAndSaveCartItems(userId, getDefaultCartItems());
-
-        repositoryCartItems.deleteByCartId(cart.getId());
-        final List<CartItem> foundByCartId = repositoryCartItems.findByCartId(cart.getId());
+        repositoryCartItems.deleteByCartId(cartId);
+        final List<CartItem> foundByCartId = repositoryCartItems.findByCartId(cartId);
 
         assertThat(foundByCartId)
                 .isEmpty();
 
     }
 
-    private Product createProducts() {
-        return Product.builder()
+    @Test
+    @Transactional(readOnly = true)
+    void shouldFind_byUserIdAndItemId() {
+        List<CartItem> getAllSavedItems = repositoryCartItems.findAll();
+        final Long itemId = getAllSavedItems.getLast().getId();
+
+        final Optional<CartItem> foundItem = repositoryCartItems.findByUserIdAndItemId(userId, itemId);
+
+        assertThat(foundItem.isPresent()).isTrue();
+        foundItem.ifPresent(item -> assertThat(item)
+                .extracting(i -> i.getProduct().getName(), CartItem::getQuantity)
+                .containsExactly("Iranian Kebab With Delicious Rice", 6));
+    }
+
+    private List<Product> createProducts() {
+
+        return of(Product.builder()
                 .name("Fish Stew With Rice")
                 .price(new BigDecimal("3000"))
                 .isAvailable(true)
-                .build();
+                .build(),
+                Product.builder()
+                        .name("Iranian Kebab With Delicious Rice")
+                        .price(new BigDecimal("85000"))
+                        .isAvailable(true)
+                        .build());
     }
 
     private void createCategoryAndAddProducts() {
         Category food = new Category("Food");
+        final List<Product> products = createProducts();
 
-        final Product product = createProducts();
-
-        food.addProduct(product);
+        products.forEach(food::addProduct);
         repositoryCategory.save(food);
     }
 
-    private CartItem getDefaultCartItems() {
+    private List<CartItem> getDefaultCartItems() {
         getAllSavedProducts.addAll(repositoryProduct.findAll());
 
-        return CartItem.builder()
+        return of(CartItem.builder()
                 .product(getAllSavedProducts.getFirst())
                 .quantity(3)
-                .build();
+                .build(),
+                CartItem.builder()
+                        .product(getAllSavedProducts.getLast())
+                        .quantity(6)
+                        .build());
     }
 
-    private Cart addAndSaveCartItems(Long userId, CartItem item) {
+    private Cart addAndSaveCartItems(Long userId, List<CartItem> items) {
         final Cart cart = getCartByUserId(userId);
 
-        cart.addItems(item);
+        items.forEach(cart::addItems);
         return repositoryCart.save(cart);
     }
 

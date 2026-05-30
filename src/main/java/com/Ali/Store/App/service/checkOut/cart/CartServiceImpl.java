@@ -85,10 +85,9 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Map<String, Object> addToCart(Long userId, AddToCartRequest cartRequest) {
-        log.info("Starting to add product to user's cart, user id [{}]", userId);
         Map<String, Object> responseMap = new HashMap<>();
         AtomicReference<ItemStatus> status = new AtomicReference<>();
-        final Users currentUser = getCurrentUserObject(userId);
+        final Users currentUser = getCurrentUser(userId);
         final Product foundProduct = getProduct(cartRequest.getProductId());
 
         checkProductStatus(cartRequest, foundProduct);
@@ -96,10 +95,10 @@ public class CartServiceImpl implements CartService {
         final Optional<Cart> foundUserCartOptional = repositoryCart.findByUserId(currentUser.getId());
 
         final Cart OperationsOutcome = foundUserCartOptional.map(cart -> repositoryCartItems.findByCartAndProduct(cart.getId(), foundProduct.getId()) // if cart user exists
-                        .map(item -> increaseItemQuantityIfExists(cartRequest.getQuantity(), item, foundProduct, status))
+                        .map(item -> increaseItemQuantityIfExists(cartRequest.getQuantity(), item, foundProduct, status))// if product already exists in user's cart
                         .orElseGet(() -> createNewItemIfDoesNotExist(cartRequest.getQuantity(), cart, foundProduct, status)))
 
-                .orElseGet(() -> createNewCartIfDoesNotExist(cartRequest.getQuantity(), currentUser, foundProduct)); // cart user doesn't exist
+                .orElseGet(() -> createNewCartIfDoesNotExist(cartRequest.getQuantity(), currentUser, foundProduct)); // if user's cart doesn't exist
 
         if (foundProduct.getQuantity() <= 0) {
             foundProduct.setAvailable(false);
@@ -118,7 +117,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public UserCartDetailsDto displayUserCartDetails(Long userId) {
-        final Users currentUser = getCurrentUserObject(userId);
+        final Users currentUser = getCurrentUser(userId);
         final List<CartItemDto> userCartItemsDetails = repositoryCartItems.findUserCartItemsDetails(currentUser.getProfile().getId());
 
         return new UserCartDetailsDto(currentUser.getProfile().getId(), userCartItemsDetails);
@@ -126,8 +125,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void reduceCartItemQuantity(Long cartItemId, Integer quantity) {
-        final CartItem foundCartItem = repositoryCartItems.findById(cartItemId)
+    public void reduceCartItemQuantity(Long userId, Integer quantity, Long cartItemId) {
+        final CartItem foundCartItem = repositoryCartItems.findByUserIdAndItemId(userId, cartItemId)
                 .orElseThrow(() -> new NotFoundCartItem(cartItemId));
 
         foundCartItem.setQuantity(foundCartItem.getQuantity() - quantity);
@@ -135,10 +134,13 @@ public class CartServiceImpl implements CartService {
 
         if (foundCartItem.getQuantity() <= 0) {
             repositoryCartItems.deleteById(foundCartItem.getId());
+            log.info("Cart item [{}] deleted successfully", foundCartItem.getId());
         }
 
         repositoryProduct.save(foundCartItem.getProduct());
         repositoryCartItems.save(foundCartItem);
+
+        log.info("Cart item [{}] quantity reduced successfully", foundCartItem.getId());
     }
 
     private static void checkProductStatus(AddToCartRequest cartRequest, Product foundProduct) {
@@ -166,18 +168,18 @@ public class CartServiceImpl implements CartService {
         return cart;
     }
 
-    private static Cart createNewItemIfDoesNotExist(int quantity, Cart foundUserCart, Product foundProduct, AtomicReference<ItemStatus> status) {
+    private static Cart createNewItemIfDoesNotExist(int quantity, Cart userCart, Product foundProduct, AtomicReference<ItemStatus> status) {
         final CartItem item = CartItem.builder()
                 .quantity(quantity)
                 .build();
         item.addProduct(foundProduct);
 
         foundProduct.setQuantity(foundProduct.getQuantity() - quantity);
-        foundUserCart.addItems(item);
+        userCart.addItems(item);
 
         status.set(CREATED);
-        log.info("A new cart item created successfully, cart id [{}]", foundUserCart.getId());
-        return foundUserCart;
+        log.info("A new cart item created successfully, cart id [{}]", userCart.getId() );
+        return userCart;
     }
 
     private static Cart increaseItemQuantityIfExists(int quantity, CartItem item, Product foundProduct, AtomicReference<ItemStatus> status) {
@@ -196,7 +198,7 @@ public class CartServiceImpl implements CartService {
     }
 
 
-    private Users getCurrentUserObject(Long userId) {
+    private Users getCurrentUser(Long userId) {
         return repositoryUser.findById(userId)
                 .orElseThrow(() -> new NotFoundUser(userId));
     }

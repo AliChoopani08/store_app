@@ -6,6 +6,7 @@ import com.Ali.Store.App.entities.productAndCategory.Product;
 import com.Ali.Store.App.entities.userAndProfileUser.Users;
 import com.Ali.Store.App.repository.productAndCategory.CategoryRepository;
 import com.Ali.Store.App.repository.productAndCategory.ProductRepository;
+import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import com.Ali.Store.App.security.jwt.JwtAuthServiceInterface;
 import com.Ali.Store.App.testConfigs.TestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +53,8 @@ public class ProductAdminIntegrationTest {
     private CategoryRepository repositoryCategory;
     @Autowired
     private ProductRepository repositoryProduct;
+    @Autowired
+    private UserRepository userRepository;
 
     private String adminAccessToken;
 
@@ -130,6 +133,7 @@ public class ProductAdminIntegrationTest {
         admin2.setPassword(encoder.encode("JAhs544@"));
         admin2.setRole(ROLE_ADMIN);
 
+        userRepository.save(admin2);
         return jwtAuthService.generateAccessToken(admin2.getUsername());
     }
 

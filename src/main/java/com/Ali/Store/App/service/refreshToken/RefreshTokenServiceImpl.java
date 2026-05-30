@@ -1,4 +1,4 @@
-package com.Ali.Store.App.security.refreshToken;
+package com.Ali.Store.App.service.refreshToken;
 
 import com.Ali.Store.App.dto.user.request.LogoutRequest;
 import com.Ali.Store.App.entities.userAndProfileUser.Device;
@@ -10,6 +10,7 @@ import com.Ali.Store.App.repository.DeviceRepository;
 import com.Ali.Store.App.repository.RefreshTokenRepository;
 import com.Ali.Store.App.repository.userAndProfileUser.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import static java.util.UUID.randomUUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
 
     private final Duration duration = Duration.ofDays(30); // for 30 days
@@ -40,12 +42,16 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
 
     @Override
     @Transactional
-    public RefreshToken createRefreshToken(UUID deviceUuid) {
-        final Device foundDevice = deviceRepository.findByDeviceUuid(deviceUuid)
+    public RefreshToken createRefreshToken(UUID deviceUuid, Long userId) {
+        log.info("Creating refresh token for user [{}]...", userId);
+
+        final Device savedDevice = deviceRepository.findByDeviceUuidAndUserId(deviceUuid, userId)
                         .map(d -> {
                             repositoryRefreshToken.findByDeviceUUid(deviceUuid)
-                                .ifPresent(__ -> {
-                                    throw new DuplicateRefreshToken();
+                                .ifPresent(rt -> {
+                                    if (!expiredRefreshToken(rt)) {
+                                        throw new DuplicateRefreshToken();
+                                    }
                                 });
 
                             RefreshToken refreshToken = RefreshToken.builder()
@@ -58,26 +64,25 @@ public class RefreshTokenServiceImpl implements RefreshTokenServiceInterface {
                         })
                 .orElseThrow(() -> new NotFoundDevice(deviceUuid));
 
-        return foundDevice.getRefreshToken();
+        log.info("Refresh token [{}] created successfully", savedDevice.getRefreshToken().getId());
+        return savedDevice.getRefreshToken();
     }
 
     @Override
-    public boolean expiredRefreshToken(UUID deviceUuid) {
-        final RefreshToken foundRefreshToken = getByDeviceUuid(deviceUuid);
+    public boolean expiredRefreshToken(RefreshToken refreshToken) {
 
-        return now().isAfter(foundRefreshToken.getExpiryDate());
+        return now().isAfter(refreshToken.getExpiryDate());
     }
 
     @Override
-    @Transactional()
-    public void deleteByDeviceUuid(LogoutRequest logoutReq) {
+    @Transactional
+    public void removeRefreshTokenByUserIdAndDeviceUuid(LogoutRequest logoutReq) {
         repositoryRefreshToken.deleteByUserIdAndDeviceUuid(logoutReq.getUserId(), logoutReq.getDeviceUuid());
     }
 
     @Override
-    public void deleteExpiredRefreshTokenByDeviceUUid(UUID deviceUuid) {
-        final RefreshToken foundRefreshToken = getByDeviceUuid(deviceUuid);
+    public void deleteExpiredRefreshTokenByDeviceUUid(RefreshToken refreshToken) {
 
-        repositoryRefreshToken.delete(foundRefreshToken);
+        repositoryRefreshToken.delete(refreshToken);
     }
 }

@@ -8,5 +8,5 @@ import java.util.Map;
 public interface CartService {
     Map<String, Object> addToCart(Long userId, AddToCartRequest cartRequest);
     UserCartDetailsDto displayUserCartDetails(Long userId);
-    void reduceCartItemQuantity(Long cartItemId, Integer quantity);
+    void reduceCartItemQuantity(Long userId, Integer quantity, Long cartItemId);
 }

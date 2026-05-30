@@ -20,6 +20,16 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
             """)
     Optional<RefreshToken> findByDeviceUUid(UUID deviceUuid);
 
+    @Query("""
+            SELECT rt
+            FROM RefreshToken rt
+            JOIN rt.device d
+            WHERE rt.token = :token 
+                AND d.deviceUuid = :deviceUuid
+                AND d.isAvailable = true
+            """)
+    Optional<RefreshToken> findByTokenAndDeviceUuid(@Param("token") UUID token, @Param("deviceUuid") UUID deviceUuid);
+
     @Modifying
     @Query("""
             DELETE FROM RefreshToken rt
