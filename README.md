@@ -86,39 +86,15 @@ It integrates advanced security, validation, and clean architecture to provide a
 ## 🖼️ Screenshots
 
 ### 📂 Project Structure
-![Firs Picture](images/project-view-1.jpg)
-![Second Picture](images/project-view-2.jpg)
-![Third Picture](images/project-view-3.jpg)
+![Firs Picture](images/pic1.jpg)
+![Second Picture](images/pic2.jpg)
 
 ### 📸API Endpoints Overview(Swagger UI)
-![First Picture](images/swagger_1.jpg)
-![First Picture](images/swagger_2.jpg)
-![First Picture](images/swagger_3.jpg)
-![First Picture](images/swagger_4.jpg)
-
-### 🔐 Authentication(Resister With Username, Password And DeviceId)
-![Registration Picture](images/swagger_5.jpg)
-![Registration Response](images/swagger_6.jpg)
-
-### 🔑 Authentication(Login With Username, Password And DeviceId)
-![Login Request Picture](images/swagger_14.jpg)
-![Login Response Picture](images/swagger_15.jpg)
-
-### 🔄 Reconstruction The Expired Access Token With Saved Refresh Token
-![Reconstruction Access Token Request Picture](images/swagger_16.jpg)
-![Reconstruction Access Token Response Picture](images/swagger_17.jpg)
-
-### 📥 Add A Product To Stock
-![Adding Product](images/swagger_7.jpg)
-![Adding Product Response](images/swagger_8.jpg)
-
-### 📥 Add A Product To User's Cart
-![Adding Some Cart Items](images/swagger_9.jpg)
-![Adding Some Cart Items Response](images/swagger_10.jpg)
-
-### 🛒 Place An Order
-![Placing An Order](images/swagger_11.jpg)
-![Placing An Order Response](images/swagger_12.jpg)
+![First Picture](images/pic3.jpg)
+![Second Picture](images/pic4.jpg)
+![Third Picture](images/pic5.jpg)
+![Fourth Picture](images/pic6.jpg)
+![Fifth Picture](images/pic7.jpg)
 
 ---
 

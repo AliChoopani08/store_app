@@ -69,7 +69,7 @@ public class JwtPwdVerifyServiceImpl implements JwtPwdVerifyServiceInterface{
                         .parseSignedClaims(token)
                         .getPayload()
                         .getExpiration();
-            return expiration.before(new Date());
+            return expiration.after(new Date());
             }
             catch (MalformedJwtException ex) {
                 throw new PasswordVerifyTokenExceptions("The Password Verify Token has invalid format !");

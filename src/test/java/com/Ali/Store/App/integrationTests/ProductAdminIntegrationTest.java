@@ -60,6 +60,9 @@ public class ProductAdminIntegrationTest {
 
     @BeforeAll
     void setUp() {
+        repositoryProduct.deleteAll();
+        userRepository.deleteAll();
+        repositoryCategory.deleteAll();
         adminAccessToken = registerAnAdminBeforeOperations();
     }
 
