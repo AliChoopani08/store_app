@@ -113,3 +113,9 @@ docker compose up -d
 ## 📄 Conclusion
 
 Store App is a backend e-commerce application that demonstrates modern Spring Boot development practices, including secure authentication, clean architecture, comprehensive testing, and containerized deployment with Docker.
+
+## 👨‍💻 Developer
+### Ali Choopani
+
+### 📱 Phone Number: 09330825474
+### 📧 Email Address: chopaniali373@gmail.com
